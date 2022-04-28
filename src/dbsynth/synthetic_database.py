@@ -1,6 +1,6 @@
-import sys
 import time
 import os
+from multiprocessing import Pool
 
 import numpy as num
 import pandas as pd
@@ -8,28 +8,20 @@ import pandas as pd
 from pyrocko import gf, util
 from pyrocko import moment_tensor as pmt
 
-# from openquake.hazardlib.geo import geodetic
+import gmacc.gmeval.observation as GMobs
 
 import ewrica.gm.sources as GMs
 import ewrica.gm.util as GMu
-# import mole.gm.misc as GMm
-# import mole_ext.openquake as GMopenquake
-
-from multiprocessing import Pool
-
-
-sys.path.insert(1, '../gm_test/')
-import observation as GMobs
 
 
 def create(args):
 
     # catch if settings are the same, when using append
-
+    args.outdir += '/%s' % (args.sourcemode)
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
-    args.outputfile = args.outdir + '/%s_database.csv' % (args.sourcemode)
+    args.outputfile = args.outdir + '/database.csv' 
     if os.path.exists(args.outputfile) and not args.append:
         print('File "%s" exists already.\nEither delete it or use "append" mode.' % args.outputfile)
         exit()
@@ -195,7 +187,7 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
     staContainer = GMobs.get_pyrocko_container(source, coords, args.comps,
                     args.imts, args.freqs, resample_f=20,
                     deleteWvData=True, H2=args.rotd100, gfpath=args.gf,
-                    savepath='%s/%s_synthetic_waveforms/%s' % (args.outdir, args.sourcemode, source.name))
+                    savepath='%s/synthetic_waveforms/%s' % (args.outdir, source.name))
 
     #############################
     ### Calculation of GMPE with openquake

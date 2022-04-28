@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
-import ewrica.gm.sources as GMs
+from gmacc.nnsynth import preprocessing as GMpre
 
-import preprocessing as GMpre
+import ewrica.gm.sources as GMs
 
 #####################
 ### Model generation
@@ -495,13 +495,17 @@ def evaluation_synthetic_database(model, xEval, yEval, scalingDict, targets, out
 
 def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False, widths=None):
 
-    nlabels = []
-    for ii, key in enumerate(diffs):
-        mean = num.mean(diffs[key])
-        std = num.std(diffs[key])
-        nlab = '%s\n(%0.2f; %0.2f)' % (labels[ii], mean, std)
-        nlabels.append(nlab)
-    labels = nlabels
+    try:
+        nlabels = []
+        for ii, key in enumerate(diffs):
+            mean = num.mean(diffs[key])
+            std = num.std(diffs[key])
+            nlab = '%s\n(%0.2f; %0.2f)' % (labels[ii], mean, std)
+            nlabels.append(nlab)
+        labels = nlabels
+    except TypeError as e:
+        print(e)
+        pass
 
     fig = plt.figure(figsize=(16, 8))
     plt.boxplot(diffs,
@@ -640,7 +644,7 @@ def nn_evaluation(model, history,
     #### Mit scaling dict noch verrechnene, damit man die werte besser interpretieren kann?
     outputdir = options['outdir'].replace('//', '/')
     tmp = outputdir.rsplit('/')[:-1]
-    resultdir = '/' + os.path.join(*tmp)
+    resultdir = os.path.join(*tmp)
     resultfile = '%s/results_NN.csv' % (resultdir)
 
     resultDict = {
