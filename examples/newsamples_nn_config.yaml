@@ -1,0 +1,7 @@
+--- !gmacc.config.NeuralNetwork
+run: true
+config_path: ''
+filecore: 'data'
+indir: 'example_data/MT/'
+outdir: 'example_data/MT/nn/cpu_elu_adam_800_default_0.0_[20, 20]-multi/'
+modeldir: 'example_data/MT/nn/cpu_elu_adam_800_default_0.0_[20, 20]-multi/'

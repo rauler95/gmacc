@@ -17,4 +17,3 @@ optimizers: ['adam']
 learningtypes: ['default']
 batchsizes: [0.1]
 hiddenlayers: [[10, 10], [20,20]]
-modeldir: '/home/lehmann/dr/code/nn_low/test_data/nn_mt/cpu_elu_adam_4000_default_0.0_[10, 10]-Z_pgd/'
