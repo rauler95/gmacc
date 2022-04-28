@@ -1,0 +1,17 @@
+--- !gmacc.config.SyntheticDatabase
+run: true
+config_path: ''
+outdir: './example_data/'
+comps: ['Z', 'E', 'N']
+rotd100: True
+gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_distant/'
+imts: ['pga', 'pgv', 'pgd']
+sourcemode: MT
+srccnt: 100
+mappoints: 10
+mapextent:
+- 1.0
+- 1.0
+mapmode: rectangular
+mp: 6
+append: False
