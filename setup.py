@@ -2,13 +2,24 @@ from __future__ import absolute_import, division, print_function
 # import os
 # import os.path as op
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 
 packname = 'gmacc'
 version = '2022.04.28'
 
+packages = ['%s' % packname]
+packs = find_packages(where="src")
+for p in packs:
+    packages.append('%s.%s' % (packname, p))
+
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+
+
+class CustomInstallCommand(install):
+    def run(self):
+        install.run(self)
 
 
 setup(
@@ -30,15 +41,15 @@ setup(
         'Programming Language :: Python :: 3',
         'Operating System :: POSIX',
         'Topic :: Scientific/Engineering'],
-    package_dir={'': 'src'},
-    packages=find_packages(where="src"),
+    # packages=find_packages(where="src"),
+    packages=packages,
+    package_dir={'gmacc': 'src'},
     python_requires='>=3.6, <4',
-
-
-    
     license='GPLv3',
     keywords=[
         'geophysics, xxxx'],
+    cmdclass={
+        'install': CustomInstallCommand},
 
 )
 
@@ -46,10 +57,3 @@ setup(
 ##############
 # package_data={
 #     packname: ['data/*']}
-# cmdclass={
-#     'install': CustomInstallCommand},
-# 
-# from setuptools.command.install import install
-# class CustomInstallCommand(install):
-#     def run(self):
-#         install.run(self)
