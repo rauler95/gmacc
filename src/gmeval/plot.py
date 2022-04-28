@@ -9,7 +9,6 @@ import matplotlib.patches as patches
 
 from mpl_toolkits import basemap
 
-
 from pyrocko import trace
 from pyrocko.plot import beachball
 from pyrocko import moment_tensor as pmt
@@ -57,6 +56,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
         if minmax:
             if obsCont:
+                if gm not in obsDict:
+                    continue
                 valMax = max(
                             max([max(num.array(vals['vals']))
                                 for comp, vals in obsDict[gm].items()]),
@@ -380,6 +381,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             Observed Data
             '''
             if obsCont:
+                if gm not in obsDict:
+                    continue
                 obsLon = obsDict[gm][obsComp]['lons']
                 obsLat = obsDict[gm][obsComp]['lats']
                 obsData = num.array(obsDict[gm][obsComp]['vals'])
@@ -506,21 +509,21 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             if plotindi:
                 plt.suptitle(titlestr, fontsize=figtitlesize)
                 plt.tight_layout()
-                if savename != []:
+                if savename != [] and savename != '':
                     fig.savefig('%s_%s_%s.png' % (savename, gm, comp))
 
         if plotgmvise and not plotindi:
             # outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
             plt.suptitle(titlestr, fontsize=figtitlesize)
             plt.tight_layout()
-            if savename != []:
+            if savename != [] and savename != '':
                 fig.savefig('%s_%s.png' % (savename, gm))
                 # plt.close()
 
     if not plotgmvise and not plotindi:
         outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
         plt.suptitle(titlestr, fontsize=figtitlesize)
-        if savename != []:
+        if savename != [] and savename != '':
             fig.savefig('%s.png' % (savename))
         else:
             return m
@@ -799,7 +802,7 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 ax1.legend(lines + lines2, labels + labels2, prop={'size': 8})
                 plt.suptitle(figtitle)
                 plt.tight_layout()
-                if savename != []:
+                if savename != [] and savename != '':
                     fig.savefig('%s_%s_%s.png' % (savename, gm, comp))
 
         if plotgmvise and not plotindi:
@@ -808,7 +811,7 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             ax1.legend(lines + lines2, labels + labels2)
             plt.suptitle(figtitle)
             outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
-            if savename != []:
+            if savename != [] and savename != '':
                 fig.savefig('%s_%s.png' % (savename, gm))
 
     if not plotgmvise and not plotindi:
@@ -837,7 +840,7 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
 
         plt.suptitle(figtitle)
         outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
-        if savename != []:
+        if savename != [] and savename != '':
             fig.savefig('%s.png' % (savename))
 
 

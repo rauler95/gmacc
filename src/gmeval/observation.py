@@ -22,8 +22,6 @@ from ewrica.gm.sources import own_differentation, create_stationdict_synthetic
 ###
 class StationContainerObservation(StationContainer):
 
-
-
     def calc_rupture_azimuths(self):
 
         lons = []
