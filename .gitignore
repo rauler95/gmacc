@@ -1,7 +1,8 @@
 /build/
 /dist/
 /doc/build/
-src/gmacc.egg-info/
+/gmacc.egg-info/
+/src/gmacc.egg-info/
 
 __pycache__/
 *.py[cod]
