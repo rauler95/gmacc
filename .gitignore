@@ -4,6 +4,8 @@
 /gmacc.egg-info/
 /src/gmacc.egg-info/
 
+/examples/example_data/
+
 __pycache__/
 *.py[cod]
 *~
