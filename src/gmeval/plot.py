@@ -8,17 +8,33 @@ from matplotlib.colors import Normalize
 import matplotlib.patches as patches
 
 from mpl_toolkits import basemap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from pyrocko import trace
 from pyrocko.plot import beachball
 from pyrocko import moment_tensor as pmt
 
-from ewrica.gm.plot import owncolorbar
-import ewrica.gm.sources as GMs
+import gmacc.gmeval.sources as GMs
 
 #############################
 ### Plot functions
 #############################
+def owncolorbar(mappable, fig, ax, label=[], ticks=[], side='right'):
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(side, size="5%", pad=0.05)
+
+    if ticks != [] and len(ticks) < 20:
+        cbar = fig.colorbar(mappable, cax=cax, label=label, ticks=ticks)
+    else:
+        cbar = fig.colorbar(mappable, cax=cax, label=label)
+
+    if side == 'left':
+        cbar.ax.yaxis.set_ticks_position('left')
+        cbar.ax.yaxis.set_label_position('left')
+
+    return
+
+
 def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 savename='gm_map', figtitle=None, figtitlesize=16,
                 cmapname='afmhot_r',

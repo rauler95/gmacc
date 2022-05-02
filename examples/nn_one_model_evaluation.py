@@ -1,10 +1,10 @@
 import numpy as num
 
 from gmacc import config
-from gmacc.nnsynth import neural_networks as GMnn
-from gmacc.nnsynth import preprocessing as GMpre
+import gmacc.nnsynth.neural_networks as GMnn
+import gmacc.nnsynth.preprocessing as GMpre
 
-args = config.NeuralNetwork(config_path='neural_network_config.yaml').get_config()
+args = config.NeuralNetwork(config_path='newsamples_nn_config.yaml').get_config()
 print(args)
 
 xEval, yEval, scalingDict, targets, inputcols = GMpre.read_evaluation_data('%s/%s' % (args.indir, args.filecore))

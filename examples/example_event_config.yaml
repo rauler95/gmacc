@@ -1,0 +1,29 @@
+--- !gmacc.config.ObservationalData
+run: true
+config_path: ''
+comps: ['Z', 'E', 'N']
+rotd100: True
+gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_distant/'
+imts: ['pga', 'pgv', 'pgd']
+sourcemode: RS
+mappoints: 20
+mapextent:
+- 2.0
+- 2.0
+mapmode: rectangular
+
+# outdir: './example_eq/Norcia2016/output2/'
+# waveformpath: './example_eq/Norcia2016/wv_CV.mseed'
+# eventfile: './example_eq/Norcia2016/event_ugsgs.json'
+# faultfile: './example_eq/Norcia2016/srcmod.fsp'
+# stationpath: './example_eq/Norcia2016/inv_CV'
+# filterfrequencies: ['None', 0.5]
+# stationstoremove: ['IV.SGG', 'IV.SEF1', 'IV.SNTG', 'IV.TRIV', 'IT.MNT', 'IV.FAEN', 'IV.FIU1', 'IV.PTRJ', 'IV.INTR', 'IT.CLF', 'IT.FBR', 'IV.CADA', 'IT.GBP', 'IT.MSC', 'IT.MSCT', 'IT.SGPA', 'IT.SNG', 'IV.CDCA', 'IV.MGAB', 'IT.TRIL', 'IT.SPD', 'IT.TRL', 'IV.MDAR', 'IV.TRE1', '3A.MZ01', '3A.MZ102', 'IT.0UM8', 'IT.AQV', 'IT.FIE', 'IV.SSM1', 'IV.CMPO', 'IT.CDM', 'IV.VAGA', 'IV.OSSC', 'IV.MRB1', 'IV.SACS', 'IV.PIEI', 'IV.MIDA', 'IV.ATPC', 'IV.BRIS', 'IV.GAG1', 'IV.IMOL']
+
+outdir: './example_eq/Kumamoto2016/output/'
+waveformpath: './example_eq/Kumamoto2016/wv.mseed'
+eventfile: './example_eq/Kumamoto2016/event_ugsgs.json'
+faultfile: './example_eq/Kumamoto2016/yagi.fsp'
+stationpath: './example_eq/Kumamoto2016/inv'
+filterfrequencies: ['None', 0.5]
+stationstoremove: ['BO.KMM005', 'BO.MYZ009', 'BO.KMMH14', 'BO.KMM012', 'BO.KGS003', 'BO.KGSH01','BO.SAG007', 'BO.FKO015', 'BO.MYZ012']

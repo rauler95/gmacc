@@ -10,8 +10,8 @@ from pyrocko import moment_tensor as pmt
 
 import gmacc.gmeval.observation as GMobs
 
-import ewrica.gm.sources as GMs
-import ewrica.gm.util as GMu
+import gmacc.gmeval.sources as GMs
+import gmacc.gmeval.util as GMu
 
 
 def create(args):

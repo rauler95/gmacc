@@ -12,9 +12,8 @@ from pyrocko import moment_tensor as pmt
 from openquake.hazardlib.geo import geodetic, Point, Mesh, PlanarSurface
 
 
-from ewrica.gm.sources import StationGMClass, ComponentGMClass,\
-                              GMClass, StationContainer
-from ewrica.gm.sources import own_differentation, create_stationdict_synthetic
+from gmacc.gmeval.sources import StationGMClass, ComponentGMClass, GMClass,\
+            StationContainer, own_differentation, create_stationdict_synthetic
 
 
 ###
@@ -615,7 +614,7 @@ class StationContainerObservation(StationContainer):
                 self.stations[sta].components[comp].trace = tr
 
     def filter_waveform(self, freqs):
-        if freqs != None:
+        if freqs is not None:
             for sta in self.stations:
                 for comp in self.stations[sta].components.keys():
                     for key, reftr in self.stations[sta].components[comp].traces.items():
@@ -623,8 +622,12 @@ class StationContainerObservation(StationContainer):
                         tr = reftr.copy()
                         # print('Applied Filter:', lpcnrfreq)
                         if type(freqs) == list:
-                            tr.highpass(4, float(freqs[0]), demean=False)
-                            tr.lowpass(4, float(freqs[1]), demean=False)
+                            if freqs[0] not in [None, 'None']:
+                                tr.highpass(4, float(freqs[0]), demean=False)
+                                print('highpass filtered %s' % freqs[0])
+                            if freqs[1] not in [None, 'None']:
+                                tr.lowpass(4, float(freqs[1]), demean=False)
+                                print('lowpass filtered %s' % freqs[1])
                         elif type(freqs) in [float, int]:
                             tr.lowpass(4, float(freqs), demean=False)
                         tr.chop(tr.tmin + 3., tr.tmax, include_last=True)
@@ -1078,8 +1081,9 @@ def create_stationdict_with_traces(traces, locDict):
 
 
 def get_observation_container(source, wvData, locationDict, mapextent,
-                            pyrockoChas, filterfreq, imts, freqs, H2=True, deleteWvData=True,
-                            savepath=None, resample_f=200, tilt_correction='disp'):
+                            pyrockoChas, filterfreq, imts, freqs, H2=True, 
+                            deleteWvData=True, savepath=None, resample_f=200,
+                            tilt_correction='disp', rmStas=[]):
 
     staDict = create_stationdict_with_traces(wvData, locationDict)
     stationCont = StationContainerObservation(refSource=source, stations=staDict)
@@ -1099,39 +1103,7 @@ def get_observation_container(source, wvData, locationDict, mapextent,
     stationCont.remove_notneeded_components(pyrockoChas)
     stationCont.remove_stations_without_components(pyrockoChas)
 
-    # Norcia
-    rmStas = ['IV.SGG', 'IV.SEF1', 'IV.SNTG', 'IV.TRIV', 'IT.MNT', 'IV.FAEN',
-            'IV.FIU1', 'IV.PTRJ', 'IV.INTR', 'IT.CLF', 'IT.FBR', 'IV.CADA',
-            'IT.GBP', 'IT.MSC', 'IT.MSCT', 'IT.SGPA', 'IT.SNG', 'IV.CDCA',
-            'IV.MGAB', 'IT.TRIL', 'IT.SPD', 'IT.TRL', 'IV.MDAR', 'IV.TRE1',
-            '3A.MZ01', '3A.MZ102', 'IT.0UM8', 'IT.AQV', 'IT.FIE', 'IV.SSM1',
-            'IV.CMPO', 'IT.CDM', 'IV.VAGA', 'IV.OSSC', 'IV.MRB1', 'IV.SACS',
-            'IV.PIEI', 'IV.MIDA', 'IV.ATPC', 'IV.BRIS', 'IV.GAG1', 'IV.IMOL',
-
-
-    #         ## older removed but decleared ok
-    #         # '3A.MZ04','IV.FIR', 'IT.SPM', 'IT.ACT', 'IT.MTL', 'IT.TRE', 
-
-            
-
-    # # Kumamoto
-            'BO.KMM005', 'BO.MYZ009', 'BO.KMMH14', 'BO.KMM012', 'BO.KGS003', 'BO.KGSH01',
-            'BO.SAG007', 'BO.FKO015', 'BO.MYZ012',]
-
-    # # Ridgecrest
-    #         'CI.CLC', 'ZZ.43158',
-
-    #         # evtl
-    #         'CI.CLT', 'CI.CRF', 'CI.CRN', 'CI.CVW', 'CI.GMR', 'CI.MLS', 'CI.FRM',
-    #         'CI.MSC', 'CI.MWC', 'CI.SSS', 'CI.THC', 'CI.VCS', 'CI.WAS2', 'ZZ.1576',
-    #         'ZZ.12102', 'ZZ.12149', 'ZZ.13702', 'ZZ.13875', 'ZZ.13893', 'ZZ.23327',
-    #         'ZZ.23417', 'ZZ.23495', 'ZZ.24609', 'ZZ.32207', 'ZZ.MMLB', 'CI.Q0035',
-    #         'CI.Q0057', 'CI.Q0068', 'CI.Q0074', 'CI.Q0077', 'CI.RCU', 'CI.YUC',
-    #         'ZZ.12673']
-
-    # rmStas = []
     stationCont.remove_stations(rmStas)
-    # stationCont.select_stations(rmStas)
     print('Remaining data for %s observed stations after manual selection/removal.'
         % (len(stationCont.stations)))
 

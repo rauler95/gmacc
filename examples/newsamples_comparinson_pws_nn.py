@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 from gmacc import config
 from gmacc.nnsynth import neural_networks as GMnn
 
+import gmacc.gmeval.sources as GMs
 from gmacc.gmeval import observation as GMEobs
 from gmacc.gmeval import plot as GMEplt
+import gmacc.gmeval.util as GMu
 
-import ewrica.gm.sources as GMs
-import ewrica.gm.util as GMu
 
 nnargs = config.NeuralNetwork(config_path='newsamples_nn_config.yaml').get_config()
 sdargs = config.SyntheticDatabase(config_path='newsamples_sd_config.yaml').get_config()

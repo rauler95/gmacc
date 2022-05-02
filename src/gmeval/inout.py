@@ -3,16 +3,40 @@ import os
 
 import numpy as num
 
-from pyrocko import orthodrome
+from pyrocko import orthodrome, io
+from pyrocko import moment_tensor as pmt
 
 from openquake.hazardlib.geo import Point, Mesh, PlanarSurface,\
                                     GriddedSurface
 
-from ewrica.gm.sources import SourceClass
+from gmacc.gmeval.sources import SourceClass
 
 ###
 # Inventory
 ###
+def get_station_data(path):
+    if os.path.isdir(path):
+        locationDict = create_locationDict_from_invdir(path)
+
+    elif os.path.isfile(path):
+        try:
+            locationDict = create_locationDict_from_xml(path)
+            print('Read from inventory xml')
+
+        except:
+            try:
+                locationDict = create_locationDict(path)
+                print('Read from location txt')
+            except:
+                print('Station file %s could not be load.' % path)
+
+    else:
+        print('Either directory or file  \'%s\' does not exist.' % path)
+        exit()
+
+    return locationDict
+
+
 def create_locationDict(fileLocation):
     locDict = {}
     with open(fileLocation, 'r') as f:
@@ -67,6 +91,94 @@ def create_locationDict_from_xml(fileLocation):
 
     return locDict
 
+###
+# Waveform
+###
+def get_waveform_data(path):
+    if os.path.isdir(path):
+        print(path)
+
+        waveformdata = []
+        for ii, file in enumerate(os.listdir(path)):
+            print(ii, path, file)
+            wvfile = os.path.join(path, file)
+            if os.path.exists(wvfile) and not os.stat(wvfile).st_size < 1:
+                waveformdata.append(*io.load(wvfile))
+
+    elif os.path.isfile(path):
+        if os.path.exists(path) and not os.stat(path).st_size < 1:
+            waveformdata = io.load(path)
+        else:
+            print('No MSEED data available or empty')
+            exit()
+
+    return waveformdata
+
+###
+# Event information
+###
+
+
+def get_event_data(file):
+    if os.path.exists(file) and not os.stat(file).st_size < 1:
+        pass
+    else:
+        print('File \'%s\' is either empty or does not exists.' % file)
+        exit()
+
+    source = convert_quakeml_to_source(file)
+
+    if hasattr(source, 'moment'):
+        if source.moment:
+            newmag = float(pmt.moment_to_magnitude(source['moment']))
+            if abs(source.magnitude - newmag) > 0.5:
+                print('Moment wrong, newmag would be: %0.2f; oldmag %s' % (newmag, source.magnitude))
+                print(source.moment)
+                source.moment = None
+
+            else:
+                # print(source.magnitude, pmt.moment_to_magnitude(source['moment']))
+                source.magnitude = newmag 
+
+    return source
+
+
+def get_finte_fault_data(faultFile, source):
+    if os.path.exists(faultFile) and not os.stat(faultFile).st_size < 1:
+        pass
+    else:
+        print('File \'%s\' is either empty or does not exists.' % faultFile)
+        exit()
+
+        source = read_fsp(faultFile, source)
+
+    try:
+        source = read_fsp(faultFile, source)
+    except:
+        try:
+            corners = read_esm_faultfile(faultFile)
+            source.rupture = corners
+            surface = corners2surface(source, corners)
+            if surface:
+                source = convert_surface(source, surface)
+            print('Fault from ESM')
+        except:
+            try:
+                corners = read_usgs_faultfile(faultFile)
+                source.rupture = corners
+                surface = corners2surface(source, corners)
+                if surface:
+                    source = convert_surface(source, surface)
+                print('Fault from USGS')
+            except:
+                print('Could not load %s file.' % faultFile)
+                exit()
+
+    source.create_rupture_surface()
+    if source.risetime is None or source.risetime < 1.:
+        source.risetime = 1.
+
+    return source
 
 ###
 # Load external source files
@@ -453,7 +565,7 @@ def convert_quakeml_to_source(eventFile):
                     source = obspy_to_source(eventFile)
                     flag = 'Obspy'
                 except:
-                    GMm.pwarning('Not possible to read-in %s' % (eventFile.rsplit('/')[-1]))
+                    print('Not possible to read-in %s' % (eventFile.rsplit('/')[-1]))
                     # exit()
                     flag = ''
                     source = None

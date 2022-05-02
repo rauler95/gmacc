@@ -12,7 +12,7 @@ import tensorflow as tf
 
 from gmacc.nnsynth import preprocessing as GMpre
 
-import ewrica.gm.sources as GMs
+import gmacc.gmeval.sources as GMs
 
 #####################
 ### Model generation
@@ -618,6 +618,8 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
                 cond = ((xEval[col] > colranges[imag]) & (xEval[col] <= colranges[imag + 1]))
 
                 diff = obsdat[cond] - preddat[cond]
+                if len(diff) == 0:
+                    diff = [0.]
                 diffs.append(diff)
                 pltlabels.append('%0.2f\n(%s)' % ((colranges[imag+1] + colranges[imag]) / 2, len(diff)))
 
