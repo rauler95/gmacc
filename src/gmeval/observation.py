@@ -277,29 +277,24 @@ class StationContainerObservation(StationContainer):
                         self.stations[sta].components['Z'].gms['GPS'] = GMClass(name='GPS',
                                 value=float(line[8]) / 100., unit='m')
 
-    
     def modify_disp_trace(self, vP=5.5, plot=True, mode='ebasco'):
-        # mode = 'disp'
-        # mode = 'vel'      
-        # mode = 'comp'
-        from obspy.signal.trigger import pk_baer
+        # from obspy.signal.trigger import pk_baer
 
         self.calc_distances()
         eq = self.refSource.name
         ot = self.refSource.time
-        vS = vP / num.sqrt(3.)
+        # vS = vP / num.sqrt(3.)
 
         if plot is True:
-            plotdir = '/home/lehmann/dr/plots/baseline/%s/processing/' % (eq)
-            if os.path.exists(plotdir):
-                pass
-            else:
-                os.mkdir(plotdir)
+            plotdir = os.path.join(os.getcwd(), 'baseline_check_%s/processing/' % (eq))
+            if not os.path.exists(plotdir):
+                print(plotdir)
+                os.makedirs(plotdir)
 
         delstas = []
 
         for sta in self.stations:
-            print(sta)
+            # print(sta)
             staDict = self.stations[sta]
 
             rhypo = staDict.rhypo
@@ -356,8 +351,8 @@ class StationContainerObservation(StationContainer):
                 if amp > 0.75:
                     tilt = 'tilt'
 
-            if tilt == 'tilt':
-                continue
+            # if tilt == 'tilt':
+            #     continue
             for comp in staDict.components:
                 # if tilt != 'tilt':
                 #     continue
@@ -434,60 +429,61 @@ class StationContainerObservation(StationContainer):
 
                 # print(idxdmax, idxdmin, idxtilt)
 
-                try:
-                    if mode == 'disp':
-                        tr = trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                        plt.suptitle('Correction on Disp')
-                    if mode == 'ebasco':
-                        tr = trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                        # tr = trace_baseline_correction_ebasco_own(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                        plt.suptitle('Correction: eBASCO')
+                # try:
+                if mode == 'disp':
+                    tr = trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
+                    plt.suptitle('Correction on Disp')
+                if mode == 'ebasco':
+                    tr = trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
+                    # tr = trace_baseline_correction_ebasco_own(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
+                    plt.suptitle('Correction: eBASCO')
 
-                    if plot:
-                        for axidx in [0, 1, 2, -3, -2, -1]:
-                            ax = axes[axidx]
+                if plot:
+                    for axidx in [0, 1, 2, -3, -2, -1]:
+                        ax = axes[axidx]
 
-                            ax.axvline(dt * idx1 + tr.tmin, color='black', linestyle='-', zorder=-10)
-                            ax.axvline(dt * idx2 + tr.tmin, color='red', linestyle='-', zorder=-10)
-                            ax.axvline(dt * idx3 + tr.tmin, color='purple', linestyle='-', zorder=-10)
+                        ax.axvline(dt * idx1 + tr.tmin, color='black', linestyle='-', zorder=-10)
+                        ax.axvline(dt * idx2 + tr.tmin, color='red', linestyle='-', zorder=-10)
+                        ax.axvline(dt * idx3 + tr.tmin, color='purple', linestyle='-', zorder=-10)
 
-                            if axidx == 2:
-                                ax.plot(rawtr.get_xdata(), rawtr.ydata, color=color, label=comp)
-                                ax.set_ylabel('Disp\nRaw')
-                                ax.axhline(y=0, color='gray', zorder=-10)
+                        if axidx == 2:
+                            ax.plot(rawtr.get_xdata(), rawtr.ydata, color=color, label=comp)
+                            ax.set_ylabel('Disp\nRaw')
+                            ax.axhline(y=0, color='gray', zorder=-10)
 
-                            elif axidx == 1:
-                                ax.plot(rawvtr.get_xdata(), rawvtr.ydata, color=color, label=comp)
-                                ax.set_ylabel('Vel\nRaw')
-                                ax.axhline(y=0, color='gray', zorder=-10)
+                        elif axidx == 1:
+                            ax.plot(rawvtr.get_xdata(), rawvtr.ydata, color=color, label=comp)
+                            ax.set_ylabel('Vel\nRaw')
+                            ax.axhline(y=0, color='gray', zorder=-10)
 
-                            elif axidx == 0:
-                                ax.plot(staDict.components[comp].traces['acc'].get_xdata(), staDict.components[comp].traces['acc'].ydata, color=color, label=comp)
-                                ax.set_ylabel('Acc\nRaw')
-                                ax.axhline(y=0, color='gray', zorder=-10)
+                        elif axidx == 0:
+                            ax.plot(staDict.components[comp].traces['acc'].get_xdata(), staDict.components[comp].traces['acc'].ydata, color=color, label=comp)
+                            ax.set_ylabel('Acc\nRaw')
+                            ax.axhline(y=0, color='gray', zorder=-10)
 
-                            elif axidx == -3:
-                                ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
-                                ax.axhline(y=0, color='gray', zorder=-10)
-                                ax.set_ylabel('Mod\nDisp')
+                        elif axidx == -3:
+                            ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+                            ax.axhline(y=0, color='gray', zorder=-10)
+                            ax.set_ylabel('Mod\nDisp')
 
-                            elif axidx == -2:
-                                nvtr = own_differentation(tr, 1)
-                                ax.set_ylabel('Mod\nVel')
-                                ax.plot(nvtr.get_xdata(), nvtr.ydata, color=color, label=comp)
+                        elif axidx == -2:
+                            nvtr = own_differentation(tr, 1)
+                            ax.set_ylabel('Mod\nVel')
+                            ax.plot(nvtr.get_xdata(), nvtr.ydata, color=color, label=comp)
 
-                            elif axidx == -1:
-                                ax.axhline(y=0, color='gray', zorder=-10)
-                                nvtr = own_differentation(tr, 2)
-                                ax.set_ylabel('Mod\nAcc')
-                                ax.plot(nvtr.get_xdata(), nvtr.ydata, color=color, label=comp)
+                        elif axidx == -1:
+                            ax.axhline(y=0, color='gray', zorder=-10)
+                            nvtr = own_differentation(tr, 2)
+                            ax.set_ylabel('Mod\nAcc')
+                            ax.plot(nvtr.get_xdata(), nvtr.ydata, color=color, label=comp)
 
-                    staDict.components[comp].traces['disp'] = tr
-                except TypeError as e:
-                    print(e)
-                    print('Deleting station')
-                    delstas.append(sta)
-                    break
+                staDict.components[comp].traces['disp'] = tr
+                staDict.components[comp].traces['vel'] = own_differentation(tr, 1)
+                # except TypeError as e:
+                #     print(e)
+                #     print('Deleting station')
+                #     delstas.append(sta)
+                #     break
 
             if plot:
                 axes[1].set_title('%s\ndist=%.1f' % (sta, dist))
@@ -499,6 +495,7 @@ class StationContainerObservation(StationContainer):
                 plt.close('all')
 
         delstas = list(set(delstas))
+        print(delstas)
         for sta in delstas:
             del self.stations[sta]
 
@@ -624,10 +621,10 @@ class StationContainerObservation(StationContainer):
                         if type(freqs) == list:
                             if freqs[0] not in [None, 'None']:
                                 tr.highpass(4, float(freqs[0]), demean=False)
-                                print('highpass filtered %s' % freqs[0])
+                                # print('highpass filtered %s' % freqs[0])
                             if freqs[1] not in [None, 'None']:
                                 tr.lowpass(4, float(freqs[1]), demean=False)
-                                print('lowpass filtered %s' % freqs[1])
+                                # print('lowpass filtered %s' % freqs[1])
                         elif type(freqs) in [float, int]:
                             tr.lowpass(4, float(freqs), demean=False)
                         tr.chop(tr.tmin + 3., tr.tmax, include_last=True)
@@ -2235,7 +2232,7 @@ def get_tilt_point(accZ, accE, accN, sta=None, eq=None, dist=None, plot=True, mo
     if mode == 'all':
         tilttime = min(Enemax, jEnemax, sEnemax)
 
-    print(mode, tilttime)
+    # print(mode, tilttime)
     # print(indvtime, jindvtime, sindvtime, Enemax, jEnemax, sEnemax)
     # exit()
 

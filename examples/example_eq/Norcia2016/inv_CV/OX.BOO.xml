@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>smi:esm-db.eu/fdsnws/station/1/</Source>
+  <Sender>INGV</Sender>
+  <Module>ObsPy 1.1.1</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2021-08-03T07:32:08.484091Z</Created>
+  <Network code="OX" startDate="2016-01-01T00:00:00.000000Z" restrictedStatus="public">
+    <SelectedNumberStations>1</SelectedNumberStations>
+    <Station code="BOO" startDate="2016-01-01T00:00:00.000000Z" restrictedStatus="public">
+      <Latitude unit="DEGREES">46.3195</Latitude>
+      <Longitude unit="DEGREES">13.0984</Longitude>
+      <Elevation unit="METERS">444.0</Elevation>
+      <Site>
+        <Name>Bordano</Name>
+      </Site>
+      <CreationDate>2016-01-01T00:00:00.000000Z</CreationDate>
+      <SelectedNumberChannels>3</SelectedNumberChannels>
+      <Channel code="HNE" locationCode="00">
+        <Latitude unit="DEGREES">46.3195</Latitude>
+        <Longitude unit="DEGREES">13.0984</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HNN" locationCode="00">
+        <Latitude unit="DEGREES">46.3195</Latitude>
+        <Longitude unit="DEGREES">13.0984</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HNZ" locationCode="00">
+        <Latitude unit="DEGREES">46.3195</Latitude>
+        <Longitude unit="DEGREES">13.0984</Longitude>
+        <Elevation unit="METERS">444.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

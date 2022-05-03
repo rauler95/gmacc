@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>smi:esm-db.eu/fdsnws/station/1/</Source>
+  <Sender>INGV</Sender>
+  <Module>ObsPy 1.1.1</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2021-08-03T07:32:08.484091Z</Created>
+  <Network code="IT" startDate="1972-01-01T00:00:00.000000Z" restrictedStatus="public">
+    <SelectedNumberStations>1</SelectedNumberStations>
+    <Station code="CSN" startDate="1900-01-01T00:00:00.000000Z" restrictedStatus="public">
+      <Latitude unit="DEGREES">44.137005</Latitude>
+      <Longitude unit="DEGREES">12.241408</Longitude>
+      <Elevation unit="METERS">100.0</Elevation>
+      <Site>
+        <Name>CESENA</Name>
+      </Site>
+      <CreationDate>1900-01-01T00:00:00.000000Z</CreationDate>
+      <SelectedNumberChannels>6</SelectedNumberChannels>
+      <Channel code="HNE" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HNZ" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HGE" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HGZ" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HNN" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+      <Channel code="HGN" locationCode="00">
+        <Latitude unit="DEGREES">44.137</Latitude>
+        <Longitude unit="DEGREES">12.2414</Longitude>
+        <Elevation unit="METERS">95.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

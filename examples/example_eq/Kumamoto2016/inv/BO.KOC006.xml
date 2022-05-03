@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>Japan National Research Institute for Earth Science and Disaster Resilience</Source>
+  <Module>ObsPy 1.2.2</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2020-11-28T09:44:44.401143Z</Created>
+  <Network code="BO">
+    <Description>source</Description>
+    <Station code="KOC006">
+      <Description>{"standard": {"instrument_period": NaN, "instrument_damping": NaN, "process_time": "", "process_level": "uncorrected physical units", "structure_type": "", "corner_frequency": NaN, "source_file": "KOC0061604160125.NS", "source_format": "knet"}, "format_specific": {}}</Description>
+      <Latitude unit="DEGREES">33.4945</Latitude>
+      <Longitude unit="DEGREES">133.4165</Longitude>
+      <Elevation unit="METERS">8.0</Elevation>
+      <Site>
+        <Name></Name>
+      </Site>
+      <CreationDate>1970-01-01T00:00:00.000000Z</CreationDate>
+      <TotalNumberChannels>3</TotalNumberChannels>
+      <Channel code="HN1" locationCode="--">
+        <Comment>
+          <Value></Value>
+        </Comment>
+        <Latitude unit="DEGREES">33.4945</Latitude>
+        <Longitude unit="DEGREES">133.4165</Longitude>
+        <Elevation unit="METERS">8.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <CalibrationUnits>
+          <Name>acc</Name>
+        </CalibrationUnits>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>1.0</Value>
+            <Frequency>nan</Frequency>
+            <InputUnits>
+              <Name>acc</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+        </Response>
+      </Channel>
+      <Channel code="HNZ" locationCode="--">
+        <Comment>
+          <Value></Value>
+        </Comment>
+        <Latitude unit="DEGREES">33.4945</Latitude>
+        <Longitude unit="DEGREES">133.4165</Longitude>
+        <Elevation unit="METERS">8.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <CalibrationUnits>
+          <Name>acc</Name>
+        </CalibrationUnits>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>1.0</Value>
+            <Frequency>nan</Frequency>
+            <InputUnits>
+              <Name>acc</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+        </Response>
+      </Channel>
+      <Channel code="HN2" locationCode="--">
+        <Comment>
+          <Value></Value>
+        </Comment>
+        <Latitude unit="DEGREES">33.4945</Latitude>
+        <Longitude unit="DEGREES">133.4165</Longitude>
+        <Elevation unit="METERS">8.0</Elevation>
+        <Depth unit="METERS">0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <CalibrationUnits>
+          <Name>acc</Name>
+        </CalibrationUnits>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>1.0</Value>
+            <Frequency>nan</Frequency>
+            <InputUnits>
+              <Name>acc</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
