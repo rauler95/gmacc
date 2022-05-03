@@ -44,7 +44,7 @@ setup(
     # packages=find_packages(where="src"),
     packages=packages,
     package_dir={'gmacc': 'src'},
-    python_requires='>=3.6, <4',
+    python_requires='>=3.6, <3.8',
     license='GPLv3',
     keywords=[
         'geophysics, xxxx'],

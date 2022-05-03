@@ -6,7 +6,7 @@
 
 /examples/example_data/
 
-*/output/*
+*output/
 
 __pycache__/
 *.py[cod]

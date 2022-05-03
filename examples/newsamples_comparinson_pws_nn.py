@@ -21,7 +21,7 @@ nnargs = config.NeuralNetwork(config_path='newsamples_nn_config.yaml').get_confi
 sdargs = config.SyntheticDatabase(config_path='newsamples_sd_config.yaml').get_config()
 
 spm = 1  # sources per magnitudes
-nsources = 2
+nsources = 2  # how many magnitude sources
 imags = num.linspace(5, 7.5, nsources)
 # imags = [4.5, 4.75, 5.0, 7.5, 7.75, 8.0]
 
