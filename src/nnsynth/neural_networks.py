@@ -27,12 +27,12 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-    print(scalingDict)
-    print(targets)
-    print(inputcols)
-    print(xTrain.columns)
-    print(yTrain.columns)
-    print(yEval.columns)
+    # print(scalingDict)
+    # print(targets)
+    # print(inputcols)
+    # print(xTrain.columns)
+    # print(yTrain.columns)
+    # print(yEval.columns)
 
     xLen = len(xTrain)
     batchsizes = []
@@ -46,7 +46,6 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
 
     iters = itertools.product(batchsizes, args.hiddenlayers, args.learningtypes,
             args.activations, args.optimizers)
-    print(iters)
 
     parameters = {
         'device': args.device,
@@ -71,8 +70,8 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
 
         if args.targetmode == 'single':
             for ycol in targets:
-                if ycol != 'Z_pgd':
-                    continue
+                # if ycol != 'Z_pgd':
+                #     continue
                 print(ycol)
 
                 noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
@@ -360,7 +359,7 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
     # if 'moment' in scalingDict:
     #     data = GMpre.convert_magnitude_to_moment(data)
 
-    data = GMpre.normalize(scalingDict, data, mode='forward')
+    data = GMpre.scale(scalingDict, data, mode='forward')
 
     # rearranging the columns, otherwise the NN does not work properly
     # there should be a fix for that to be sure when this is really correct !!!
@@ -379,7 +378,7 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
     for nn in range(len(targets)):
         preddict[targets[nn]] = pred[nn]
 
-    preddict = GMpre.normalize(scalingDict, preddict, mode='inverse')
+    preddict = GMpre.scale(scalingDict, preddict, mode='inverse')
     print(preddict)
 
     if targetsMain:
@@ -484,9 +483,9 @@ def evaluation_synthetic_database(model, xEval, yEval, scalingDict, targets, out
 
     predDF = get_predict_df(model, xEval, targets, batchsize=100)
 
-    xEval_norm = GMpre.normalize(scalingDict, xEval, mode='inverse')
-    yEval_norm = GMpre.normalize(scalingDict, yEval, mode='inverse')
-    predDF_norm = GMpre.normalize(scalingDict, predDF, mode='inverse')
+    xEval_norm = GMpre.scale(scalingDict, xEval, mode='inverse')
+    yEval_norm = GMpre.scale(scalingDict, yEval, mode='inverse')
+    predDF_norm = GMpre.scale(scalingDict, predDF, mode='inverse')
 
     evaluate_gm_general(predDF_norm, yEval_norm, targets, outdir)
     evaluate_gm_column(['magnitude', 'rhypo'], predDF_norm, xEval_norm, yEval_norm, targets,
@@ -645,9 +644,9 @@ def nn_evaluation(model, history,
 
     #### Mit scaling dict noch verrechnene, damit man die werte besser interpretieren kann?
     outputdir = options['outdir'].replace('//', '/')
-    tmp = outputdir.rsplit('/')[:-1]
-    resultdir = os.path.join(*tmp)
-    resultfile = '%s/results_NN.csv' % (resultdir)
+    tmp = outputdir.rsplit('/')[-1]
+    resultdir = outputdir.replace(tmp, '')
+    resultfile = os.path.join(resultdir, 'results_NN.csv')
 
     resultDict = {
         'layers': str(hiddenlayer).replace(',', ' '),
@@ -680,7 +679,7 @@ def nn_evaluation(model, history,
         prediction = model_predict(model, xdat, batchsize=evl_batchsize)
         trueval = ydat.values.T
         evalcriteria = list(history.history.keys())[:len(evaluation)]
-        print(name, evaluation)
+        # print(name, evaluation)
 
         for ii in range(len(evaluation)):
             resultDict['%s_%s' % (name, evalcriteria[ii])] = '%0.7f' % evaluation[ii]
@@ -694,8 +693,6 @@ def nn_evaluation(model, history,
                 resultDict['%s-%s_rms' % (target, name)] = '%0.7f' % num.sqrt(num.mean(diff**2))
                 # resultDict['%s-%s_std' % (target, name)] = num.round(num.std(diff), 5)
                 del diff
-
-    print(resultDict)
 
     if not os.path.exists(resultfile):
         with open(resultfile, "w") as file:
@@ -754,16 +751,24 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
     predDF = pd.DataFrame(predDict)
     # predDF_train = pd.DataFrame(predDict_train)
 
-    predDF = GMpre.normalize(scalingDict, predDF, mode='inverse')
-    # predDF_train = GMpre.normalize(scalingDict, predDF_train, mode='inverse')
+    predDF = GMpre.scale(scalingDict, predDF, mode='inverse')
+    # predDF_train = GMpre.scale(scalingDict, predDF_train, mode='inverse')
 
-    xEval_true = GMpre.normalize(scalingDict, xEval, mode='inverse')
-    yEval_true = GMpre.normalize(scalingDict, yEval, mode='inverse')
+    xEval_true = GMpre.scale(scalingDict, xEval, mode='inverse')
+    yEval_true = GMpre.scale(scalingDict, yEval, mode='inverse')
 
     for target in targets:
         if '_res' in target:
-            predDF[target] = predDF[target] + xEval_true['%s' % target.replace('_res', '_lowfr')]
-            yEval_true[target] = yEval_true[target] + xEval_true['%s' % target.replace('_res', '_lowfr')]
+            try:
+                predDF[target] = predDF[target] + xEval_true['%s' % target.replace('_res', '_lowfr')]
+                yEval_true[target] = yEval_true[target] + xEval_true['%s' % target.replace('_res', '_lowfr')]
+            except KeyError as e:
+                # print('Error:', e)
+                cha = target.rsplit('_')[0]
+                sfreq = max([float(t.rsplit('_')[-2]) for t in xEval.columns if ('_lowfr' in t) and (float(t.rsplit('_')[-2]) < 0.5)])
+                scol = '%s_f_%s_lowfr' % (cha, sfreq)
+                predDF[target] = predDF[target] + xEval_true[scol]
+                yEval_true[target] = yEval_true[target] + xEval_true[scol]
 
     for cha in ['Z', 'E', 'N']:
         
@@ -791,7 +796,8 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
         #             xlabel=col, fileprefix='%s_%s_%s' % (col, target, cha), predirectory=False)
 
         chatargets = [t for t in targets if '%s_' % cha in t]
-
+        if len(chatargets) == 0:
+            continue
         diffDF = yEval_true[chatargets] - predDF[chatargets]
         plt.figure(figsize=(12, 6))
         positions = num.arange(0, len(chatargets), 1)

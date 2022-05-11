@@ -17,6 +17,7 @@ from gmacc.gmeval.sources import SourceClass
 def get_station_data(path):
     if os.path.isdir(path):
         locationDict = create_locationDict_from_invdir(path)
+        print('Read from inventory directory')
 
     elif os.path.isfile(path):
         try:
@@ -112,6 +113,10 @@ def get_waveform_data(path):
             print('No MSEED data available or empty')
             exit()
 
+    else:
+        print('Path %s is not existing.' % path)
+        exit()
+
     return waveformdata
 
 ###
@@ -124,7 +129,7 @@ def get_event_data(file):
         pass
     else:
         print('File \'%s\' is either empty or does not exists.' % file)
-        exit()
+        return None
 
     source = convert_quakeml_to_source(file)
 
@@ -953,7 +958,7 @@ def check_for_fault_plain(directory, source):
 
     if source.form == 'point':
         surface = Mesh(num.array([source.lon]),
-                        num.array([source.lat]),
-                        num.array([source.depth]))
+                       num.array([source.lat]),
+                       num.array([source.depth]))
 
     return source

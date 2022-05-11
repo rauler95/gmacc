@@ -310,6 +310,10 @@ class StationContainerObservation(StationContainer):
             accE = staDict.components['E'].traces['acc'].copy()
             accN = staDict.components['N'].traces['acc'].copy()
 
+            if not accZ.deltat == accE.deltat == accN.deltat:
+                delstas.append(sta)
+                continue    
+
             tmin = max(accZ.tmin, accE.tmin, accN.tmin)
             tmax = min(accZ.tmax, accE.tmax, accN.tmax)
             accZ.chop(tmin, tmax, include_last=True)
@@ -319,16 +323,24 @@ class StationContainerObservation(StationContainer):
             ### idx2
             tilttime = get_tilt_point(accZ, accE, accN, sta=sta, eq=eq,
                             dist=dist, plot=False, mode='all')
+
             ### idx1 and idx3
             alldata = accZ.ydata**2 + accE.ydata**2 + accN.ydata**2
 
             cumsum = num.cumsum(alldata)
             idxdmax = num.where(cumsum > 0.99 * cumsum.max())[0][0]
             idxdmin = num.where(cumsum < 0.0001 * cumsum.max())[0]
-            if len(idxdmin) > 10:
-                idxdmin = idxdmin[-1]
-            else:
-                idxdmin = num.where(cumsum < 0.001 * cumsum.max())[0][-1]
+
+            idxdminflag = True
+            cnt = 0
+            while idxdminflag:
+                if len(idxdmin) > 10:
+                    idxdmin = idxdmin[-1]
+                    idxdminflag = False
+                else:
+                    idxdmin = num.where(cumsum < cnt * 0.001 * cumsum.max())[0]
+                    cnt += 2
+
             dmax = accZ.deltat * idxdmax + accZ.tmin
             dmin = accZ.deltat * idxdmin + accZ.tmin
 
@@ -363,16 +375,23 @@ class StationContainerObservation(StationContainer):
                 ### Acceleration correction
                 idxdmax = int(max(((dmax) - vtr.tmin), 0) / dt)
                 idxdmin = int(max(((dmin - 1) - vtr.tmin), 0) / dt)
+                if idxdmin < 10:
+                    idxdmin = int(max(((dmin) - vtr.tmin), 0) / dt)
                 idxtilt = int(max(((tilttime) - vtr.tmin), 0) / dt)
 
                 idx1 = idxdmin
                 idx2 = idxtilt
                 idx3 = idxdmax
 
+                # try:
                 vtr.ydata -= vtr.ydata[0]
                 facs = num.polyfit(vtr.get_xdata()[:idx1] - vtr.tmin, vtr.ydata[:idx1], 1)
                 m1 = facs[-2]
                 atr.ydata[:idx2] -= m1
+                # except TypeError as e:
+                #     print('Error:', e)
+                #     delstas.append(sta)
+                #     break
 
                 # if tilt != 'tilt':
                 if True:
@@ -420,14 +439,14 @@ class StationContainerObservation(StationContainer):
 
                 idxdmax = int(max(((dmax) - tr.tmin), 0) / dt)
                 idxdmin = int(max(((dmin - 1) - tr.tmin), 0) / dt)
+                if idxdmin < 10:
+                    idxdmin = int(max(((dmin) - vtr.tmin), 0) / dt)
                 idxtilt = int(max(((tilttime) - tr.tmin), 0) / dt)
 
                 # idx1 = idxp
                 idx1 = idxdmin
                 idx2 = idxtilt
                 idx3 = idxdmax
-
-                # print(idxdmax, idxdmin, idxtilt)
 
                 # try:
                 if mode == 'disp':
@@ -495,7 +514,6 @@ class StationContainerObservation(StationContainer):
                 plt.close('all')
 
         delstas = list(set(delstas))
-        print(delstas)
         for sta in delstas:
             del self.stations[sta]
 
@@ -795,99 +813,6 @@ class StationContainerObservation(StationContainer):
 ###
 # ...
 ###
-
-def get_data_from_observation(args, finitefault=True):
-
-    print('\n###############')
-    print(args.datadir[0])
-
-    #############################
-    ### Read IN
-    #############################
-
-    ## Waveform
-    fileMseed = '%s/wv.mseed' % (args.datadir[0])
-    if os.path.exists(fileMseed) and not os.stat(fileMseed).st_size < 1:
-        wvData = io.load(fileMseed)
-    else:
-        GMm.pfail('No MSEED data available or empty')
-        exit()
-
-    for eventFile in ['event_ugsgs.json', 'event.xml', 'event_usgs.xml',
-                      'event_esm.xml', 'event_small.xml']:
-        if os.path.exists('%s/%s' % (args.datadir[0], eventFile)):
-            print('Try %s' % eventFile)
-            source = convert_quakeml_to_source('%s/%s' % (args.datadir[0], eventFile))
-            if source:
-                if not source.strike and not source.tensor:
-                    with open('%s/%s' % (args.datadir[0], eventFile)) as f:
-                        if 'strike' in f.read():
-                            GMm.pwarning('Strike or MT in XML!!')
-                else:
-                    break
-
-    if not source:
-        GMm.pfail('Source is empty')
-        exit()
-
-    if not source.strike:
-        if source.tensor:
-            mt = pmt.MomentTensor(mnn=source.tensor['mnn'],
-                                  mee=source.tensor['mee'],
-                                  mdd=source.tensor['mdd'],
-                                  mne=source.tensor['mne'],
-                                  mnd=source.tensor['mnd'],
-                                  med=source.tensor['med'])
-
-            (s1, d1, r1), (s2, d2, r2) = mt.both_strike_dip_rake()
-            source.strike = float(s1)
-            source.dip = float(d1)
-            source.rake = float(r1)
-            print('No strike available, but converted from MT to')
-            print('Strike:', s1, 'Dip:', d1, 'Rake', r1)
-
-    if hasattr(source, 'moment'):
-        if source.moment:
-            newmag = float(pmt.moment_to_magnitude(source['moment']))
-            if abs(source.magnitude - newmag) > 0.5:
-                print('Moment wrong, newmag would be: %0.2f; oldmag %s' % (newmag, source.magnitude))
-                print(source.moment)
-                source.moment = None
-
-            else:
-                source.magnitude = newmag
-
-    if finitefault:
-        ## Fault Plain
-        source = check_for_fault_plain(args.datadir[0], source)
-        source.create_rupture_surface()
-        source.validate()
-        print('Source after FiniteFault:\n', source)
-
-    ## Station info
-    locationFile = '%s/location.txt' % (args.datadir[0])
-    invFile = '%s/inv.xml' % (args.datadir[0])
-    invDir = '%s/inv' % (args.datadir[0])
-
-    if os.path.exists(invDir):
-        locationDict = GMm.create_locationDict_from_invdir(invDir)
-        print('Read from inventory directory')
-
-    elif os.path.exists(invFile):
-        locationDict = GMm.create_locationDict_from_xml(invFile)
-        print('Read from inventory xml')
-
-    elif os.path.exists(locationFile):
-        locationDict = GMm.create_locationDict(locationFile)
-        print('Read from location txt')
-
-    else:
-        print('No file/directory with station/inventory locations is present')
-        exit()
-
-    return source, wvData, locationDict
-
-
 def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
                             chaCodes=['Z', 'N', 'E']):
     '''
@@ -1716,7 +1641,8 @@ def trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt'
             facs = num.polyfit(tr.get_xdata()[:idx1] - tr.tmin,
                             tr.ydata[:idx1], rang)
 
-            tr.ydata[:idx2] = tr.ydata[:idx2] - pf(tr.get_xdata()[:idx2] - tr.tmin, facs) + pf(tr.get_xdata()[:idx2] - tr.tmin, facs)[-1]
+            tr.ydata[:idx2] = tr.ydata[:idx2] - pf(tr.get_xdata()[:idx2]
+                - tr.tmin, facs) + pf(tr.get_xdata()[:idx2] - tr.tmin, facs)[-1]
 
             tr.ydata -= tr.ydata[0]
             if plot:
@@ -1764,7 +1690,6 @@ def trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt'
             ax.plot(vtr.get_xdata(), vtr.ydata, color=color, label=comp)
 
         tr = own_integrate(vtr, detrend=False, intval=1)
-
         facs = num.polyfit(tr.get_xdata()[:idx1] - tr.tmin,
                         tr.ydata[:idx1], 1)
         tr.ydata = tr.ydata - pf(tr.get_xdata() - tr.tmin, facs)
@@ -2117,6 +2042,7 @@ def get_tilt_point(accZ, accE, accN, sta=None, eq=None, dist=None, plot=True, mo
     snapN = own_differentation(accN, intval=2, chop=False, transfercut=0)
 
     accEne = accZ.ydata**2 + accE.ydata**2 + accN.ydata**2
+
     jerkEne = jerkZ.ydata**2 + jerkE.ydata**2 + jerkN.ydata**2
     snapEne = snapZ.ydata**2 + snapE.ydata**2 + snapN.ydata**2
 
@@ -2230,7 +2156,9 @@ def get_tilt_point(accZ, accE, accN, sta=None, eq=None, dist=None, plot=True, mo
     if mode == 'indv':
         tilttime = min(indvtime, jindvtime, sindvtime)
     if mode == 'all':
-        tilttime = min(Enemax, jEnemax, sEnemax)
+        tiltmaxlist = [Enemax, jEnemax, sEnemax]
+        tiltmaxlist = [i for i in tiltmaxlist if i > (accZ.tmin + 5 * accZ.deltat)]
+        tilttime = min(tiltmaxlist)
 
     # print(mode, tilttime)
     # print(indvtime, jindvtime, sindvtime, Enemax, jEnemax, sEnemax)

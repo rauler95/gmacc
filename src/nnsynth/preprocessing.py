@@ -7,7 +7,6 @@ import pandas as pd
 
 def calc_azistrike(data, strikecol='strike', azimuthcol='azimuth', azistrikecol='azistrike', delete=True):
     data.loc[data[azimuthcol] < 0, azimuthcol] = data[azimuthcol][data[azimuthcol] < 0] + 360
-
     data[azistrikecol] = data[azimuthcol] - data[strikecol]
     data.loc[data[azistrikecol] < 0, azistrikecol] = data[azistrikecol][data[azistrikecol] < 0] + 360
 
@@ -38,37 +37,33 @@ def convert_magnitude_to_moment(data):
     return data
 
 
-# def read_data(args, defcols, targets):
-#     #############################
-#     ### Read and manipulate data
-#     #############################
-#     rawdata = pd.read_csv(args.datafile[0])
+def standardize_frequencies(data, cols, scalingDict={}):
+    vals = []
+    for col in cols:
+        vals += data[col].to_list()
 
-#     selectColumns = defcols
+    mean = num.mean(vals)
+    std = num.std(vals)
 
-#     variables = args.datafile[0].rsplit('/')[-2]
-#     variables = variables.rsplit('_')[1:]
+    for col in cols:
+        if col not in scalingDict:
+            scalingDict[col] = {}
+        data[col] = (data[col] - mean) / std
+        scalingDict[col] = {'mean': mean, 'std': std}
 
-#     selectColumns = selectColumns + variables
-#     data = rawdata[selectColumns + targets]
-
-#     data = calc_azistrike(data)
-#     data = convert_distances(data)
-
-#     print(list(data.columns))
-#     print(data.shape)
-
-#     return rawdata, data
+    return data, scalingDict
 
 
-def standardize_data(data, sortcol='', targets=''):
-    scalingDict = {}
+def standardize_data(data, sortcol='', exceptions='', scalingDict={}):
+
     for col in data.columns:
-        if col in targets:
+        if col in exceptions:
             continue
         if col in sortcol or col == sortcol:
             continue
 
+        if col not in scalingDict:
+            scalingDict[col] = {}
         mean = num.mean(data[col])
         std = num.std(data[col])
         data[col] = (data[col] - mean) / std
@@ -77,27 +72,35 @@ def standardize_data(data, sortcol='', targets=''):
     return data, scalingDict
 
 
-def standardize(scalingDict, data, mode='forward'):
+def standardize(scalingDict, data, mode='forward', verbose=False):
     ndata = {}
     for col in scalingDict.keys():
         if col not in data:
-            print(col, 'not in data')
+            if verbose is not False:
+                print(col, 'not in Data')
             continue
 
-        mean = scalingDict[col]['mean']
-        std = scalingDict[col]['std']
-
-        if mode == 'forward':
-            ndata[col] = (data[col] - mean) / std
-
-        elif mode == 'inverse':
-            ndata[col] = mean + (data[col] * std)
-
-        else:
-            print('Wrong scaling mode')
-            exit()
+        ndata[col] = standardize_column(scalingDict, data, col, mode, verbose)
 
     return pd.DataFrame(ndata)
+
+
+def standardize_column(scalingDict, data, col, mode='forward', verbose=False):
+
+    mean = scalingDict[col]['mean']
+    std = scalingDict[col]['std']
+
+    if mode == 'forward':
+        ndata = (data[col] - mean) / std
+
+    elif mode == 'inverse':
+        ndata = mean + (data[col] * std)
+
+    else:
+        print('Wrong scaling mode')
+        exit()
+
+    return ndata
 
 
 def normalize_data(data, sortcol='', exceptions='', scalingDict={}, extra=None):
@@ -162,15 +165,41 @@ def normalize(scalingDict, data, mode='forward', verbose=False):
                 print(col, 'not in Data')
             continue
 
-        valmin = scalingDict[col]['min']
-        valmax = scalingDict[col]['max']
+        ndata[col] = normalize_column(scalingDict, data, col, mode, verbose)
 
-        if mode == 'forward':
-            ndata[col] = (data[col] - valmin) / (valmax - valmin)
+    return pd.DataFrame(ndata)
 
-        elif mode in ['inverse', 'reverse']:
-            ndata[col] = ((valmax - valmin) * data[col]) + valmin
 
+def normalize_column(scalingDict, data, col, mode='forward', verbose=False):
+    valmin = scalingDict[col]['min']
+    valmax = scalingDict[col]['max']
+
+    if mode == 'forward':
+        ndata = (data[col] - valmin) / (valmax - valmin)
+
+    elif mode in ['inverse', 'reverse']:
+        ndata = ((valmax - valmin) * data[col]) + valmin
+    else:
+        print('Wrong scaling mode')
+        exit()
+
+    return ndata
+
+
+def scale(scalingDict, data, mode='forward', verbose=False):
+    ndata = {}
+
+    for col in scalingDict.keys():
+        if col not in data:
+            if verbose is not False:
+                print(col, 'not in Data')
+            continue
+
+        if 'min' in scalingDict[col] and 'max' in scalingDict[col]:
+            ndata[col] = normalize_column(scalingDict, data, col, mode)
+
+        elif 'mean' in scalingDict[col] and 'std' in scalingDict[col]:
+            ndata[col] = standardize_column(scalingDict, data, col, mode)
         else:
             print('Wrong scaling mode')
             exit()
@@ -178,9 +207,10 @@ def normalize(scalingDict, data, mode='forward', verbose=False):
     return pd.DataFrame(ndata)
 
 
-def create_subsets(data, rawdata, targets, sortcol, remove_cols=[], eval_percent=0.2, test_percent=0.0):
+def create_subsets(data, rawdata, targets, sortcol, remove_cols=[], eval_percent=0.2, test_percent=0.0, randomseed=False):
 
-    ### percentages
+    if randomseed:
+        random.seed(randomseed)
 
     # print(data[sortcol])
     eventNameList = list(set(data[sortcol]))

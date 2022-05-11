@@ -281,6 +281,11 @@ class SyntheticDatabase(GroundMotionData):
 
 class ObservationalData(GroundMotionData):
 
+    eqname = String.T(
+        optional=True,
+        default='Event',
+        help='Name of the event.')
+
     filterfrequencies = List.T(
         optional=True,
         default=[None, None],
@@ -308,3 +313,15 @@ class ObservationalData(GroundMotionData):
         default=[],
         optional=True,
         help='List of two numbers which define the map size in degree around the hypocenter.')
+
+    ####
+
+    datadir = String.T(
+        default='',
+        optional=True,
+        help='Directory where all information, as wv, station etc. of the earthquake is stored.')
+
+    synthetics = Bool.T(
+        default=False,
+        optional=True,
+        help='Enables synthetic waveform processing for station coordinates of observation.')

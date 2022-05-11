@@ -75,9 +75,8 @@ def create(args):
         p.join()
 
 
-def extract_gm(ii, args, mapextent, ncords, mapping):
+def create_random_source(sourcemode, ii):
 
-    reftime = time.time()
     num.random.seed(seed=ii)
 
     mag = num.random.randint(5000, 7501) / 1000.
@@ -90,7 +89,7 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
     depth = num.random.uniform(0.1, 10.)
 
     ## MT ##
-    if args.sourcemode == 'MT':
+    if sourcemode == 'MT':
         mt = pmt.MomentTensor(strike=strike, dip=dip, rake=rake, magnitude=mag)
 
         src = gf.MTSource(lat=lat, lon=lon,
@@ -116,7 +115,7 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
         # print(GMs.from_mtsource_to_own_source(src))
 
     ## RS ##
-    elif args.sourcemode == 'RS':
+    elif sourcemode == 'RS':
         ## depth corresponds to top of rupture depth/depth of anchor point
 
         # nucx = num.random.uniform(-1, 1)  # (-1 = left edge, +1 = right edge)
@@ -157,6 +156,16 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
     source.update(name='%s_%s' % (source.name, ii))
     source.validate()
     # print(source)
+    # exit()
+
+    return source
+
+
+def extract_gm(ii, args, mapextent, ncords, mapping):
+
+    reftime = time.time()
+    
+    source = create_random_source(args.sourcemode, ii=ii)
 
     print('Starting %s; Mag: %0.1f, Depth: %0.2f, NucX: %0.2f, NucY %0.2f'
         % (ii, source.magnitude, source.depth,
@@ -242,6 +251,20 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
 
     ############
     ## Print to file
+
+    ### alternative approach (maybe faster/better?)
+    # st_gdf = stationCont.to_geodataframe()
+    # py_gdf = pyrockoCont.to_geodataframe()
+
+    # cols = py_gdf.columns
+    # allGDF = st_gdf.copy(deep=True)
+
+    # for col in cols:
+    #     if col in ['geometry', 'st_lat', 'st_lon']:
+    #         continue
+    #     else:
+    #         allGDF[str(col) + '_lowfr'] = py_gdf[col]
+
 
     resultDictraw = {
         'evID': source.name,
