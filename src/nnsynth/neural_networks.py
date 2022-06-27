@@ -79,6 +79,8 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                                         parameters['optimizer'], parameters['batchsize'],
                                         parameters['learningtype'], parameters['dropout'],
                                         hiddenlayer, ycol)
+
+                noutputdir = noutputdir.replace(' ', '')
                 if not os.path.exists(noutputdir):
                     os.makedirs(noutputdir)
                 else:
@@ -103,6 +105,8 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                                         parameters['optimizer'], parameters['batchsize'],
                                         parameters['learningtype'], parameters['dropout'],
                                         hiddenlayer, 'multi')
+
+            noutputdir = noutputdir.replace(' ', '')
             if not os.path.exists(noutputdir):
                 os.makedirs(noutputdir)
             else:
@@ -323,8 +327,6 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
         scalingDict, targets = load_scalingdict(suppfile)
         inputcols = None
 
-    targets = check_multi_or_single_nn(modelfile, targets)
-
     lons, lats = coords.T
 
     data = {}
@@ -356,8 +358,8 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
     data = GMpre.calc_azistrike(data)
     data = GMpre.convert_distances(data)
 
-    # if 'moment' in scalingDict:
-    #     data = GMpre.convert_magnitude_to_moment(data)
+    if 'moment' in scalingDict:
+        data = GMpre.convert_magnitude_to_moment(data)
 
     data = GMpre.scale(scalingDict, data, mode='forward')
 
@@ -374,25 +376,26 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
     ## Predicting
     pred = model_predict(model, data, int(data.shape[0] / 100))
 
+    if targetsMain:
+        targets = targetsMain
+        # preddict = preddict[targetsMain]
+    else:
+        targets = check_multi_or_single_nn(modelfile, targets)
+
     preddict = {}
     for nn in range(len(targets)):
         preddict[targets[nn]] = pred[nn]
 
     preddict = GMpre.scale(scalingDict, preddict, mode='inverse')
-    print(preddict)
-
-    if targetsMain:
-        targets = targetsMain
-        preddict = preddict[targetsMain]
 
     preddict['lon'] = lons
     preddict['lat'] = lats
-
     staDict = {}
     for idx, row in preddict.iterrows():
         ns = 'PR.S%s' % (idx)
 
         for chagm in targets:
+            print(chagm)
             t = chagm.rsplit('_')
 
             t = chagm.rsplit('_')
@@ -531,9 +534,9 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
 
 
 def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False,
-        points=20):
+        points=20, ymin=-2, ymax=2):
 
-    fig = plt.figure(figsize=(16, 8))
+    fig = plt.figure(figsize=(8, 6))
     widths = (num.nanmax(positions) - num.nanmin(positions)) / (len(positions))
     ## widths alternative with num.diff
     parts = plt.violinplot(diffs, positions=positions, points=points, 
@@ -544,13 +547,14 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
         pc.set_edgecolor(None)
         pc.set_alpha(1)
 
+    print(diffs)
     doublestd = num.array([num.percentile(list(d), [2.5, 97.5]) for d in diffs]).T
     std = num.array([num.percentile(list(d), [16, 84]) for d in diffs]).T
     plt.scatter(positions, [num.median(d) for d in diffs], marker='o', color='darkgrey', s=30, zorder=3, label='median')
     plt.vlines(positions, *doublestd, color='darkgrey', linestyle='-', lw=5, label='2*Std')
     plt.vlines(positions, *std, color='black', linestyle='-', lw=5, label='Std')
 
-    plt.grid(True, 'both')
+    # plt.grid(True, 'both')
     plt.xticks(positions, labels=labels)
     plt.ylabel('Difference')
     plt.xlabel(xlabel)
@@ -559,18 +563,20 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
     plt.axhline(0.5, color='black', linestyle=':')
     plt.axhline(-0.5, color='black', linestyle=':')
     plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
+    plt.ylim((ymin, ymax))
+    plt.xticks(rotation='60')
     plt.legend()
     plt.tight_layout()
     plt.savefig('%s/%sviolinplot.png' % (outdir, fileprefix))
 
     if predirectory:
-        plt.savefig('%s_%sboxplot.png' % (outdir, fileprefix))
+        plt.savefig('%s_%sviolinplot.png' % (outdir, fileprefix))
     ax = plt.gca()
 
     return fig, ax
 
 
-def evaluate_gm_general(predDF, yEval, targets, outdir, plotmode='box', violinpoints=20):
+def evaluate_gm_general(predDF, yEval, targets, outdir, predirectory=True, fileprefix='', plotmode='box', violinpoints=20):
 
     positions = num.arange(0, len(targets))
 
@@ -582,11 +588,11 @@ def evaluate_gm_general(predDF, yEval, targets, outdir, plotmode='box', violinpo
         diffs.append((obsdat - preddat).to_numpy())
 
     if plotmode == 'box':
-        boxplot(diffs, positions, targets, outdir=outdir,
-                predirectory=True)
+        boxplot(diffs, positions, targets, outdir=outdir, fileprefix=fileprefix,
+                predirectory=predirectory)
     elif plotmode == 'violin':
-        violinplot(diffs, positions, targets, outdir=outdir,
-                predirectory=True, points=violinpoints)
+        violinplot(diffs, positions, targets, outdir=outdir, fileprefix=fileprefix,
+                predirectory=predirectory, points=violinpoints)
     else:
         print('Wrong plotmode: %s' % plotmode)
 
@@ -770,6 +776,9 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
                 predDF[target] = predDF[target] + xEval_true[scol]
                 yEval_true[target] = yEval_true[target] + xEval_true[scol]
 
+    evaluate_gm_general(predDF, yEval_true, targets, outdir, plotmode='violin', violinpoints=200, predirectory=False)
+    evaluate_gm_general(predDF, yEval_true, targets, outdir, plotmode='box', predirectory=False)
+
     for cha in ['Z', 'E', 'N']:
         
         # for target in targets:
@@ -796,17 +805,8 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
         #             xlabel=col, fileprefix='%s_%s_%s' % (col, target, cha), predirectory=False)
 
         chatargets = [t for t in targets if '%s_' % cha in t]
-        if len(chatargets) == 0:
-            continue
-        diffDF = yEval_true[chatargets] - predDF[chatargets]
-        plt.figure(figsize=(12, 6))
-        positions = num.arange(0, len(chatargets), 1)
-        if cha == 'Z':
-            predirectory = True
-        else:
-            predirectory = False
-        boxplot(diffDF, positions, chatargets, outdir, xlabel='',
-                fileprefix='%s_' % cha, predirectory=predirectory)
+        evaluate_gm_general(predDF[chatargets], yEval_true[chatargets], chatargets, outdir, fileprefix='%s_' % cha, plotmode='violin', violinpoints=200, predirectory=False)
+        evaluate_gm_general(predDF[chatargets], yEval_true[chatargets], chatargets, outdir, fileprefix='%s_' % cha, plotmode='box', predirectory=False)
 
     ## Spectra plots
     inputtargets = [c for c in xEval.columns if '_lowfr' in c]
@@ -814,22 +814,22 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
     random.seed(1)
     idxs = random.choices(range(len(yEval_true[targets[0]])), k=10)
     for nn in idxs:
-        plt.figure(nn, figsize=(12, 12))
+        plt.figure(nn, figsize=(8, 8))
         for cha in ['Z', 'E', 'N']:
             truexs = []
             trueys = []
             predys = []
-            lowys = []
-            lowxs = []
-            for inptarget in inputtargets:
-                if inptarget.rsplit('_')[0] == cha:
-                    f = inptarget.rsplit('_')[-2]
-                    val = xEval_true[inptarget][nn]
-                    lowxs.append(f)
-                    lowys.append(val)
+            # lowys = []
+            # lowxs = []
+            # for inptarget in inputtargets:
+            #     if inptarget.rsplit('_')[0] == cha:
+            #         f = inptarget.rsplit('_')[-2]
+            #         val = xEval_true[inptarget][nn]
+            #         lowxs.append(f)
+            #         lowys.append(val)
 
-            lowxs = num.array(lowxs)
-            lowys = num.array(lowys)
+            # lowxs = num.array(lowxs)
+            # lowys = num.array(lowys)
 
             # sortidx = lowfreqs.argsort()
 
@@ -875,8 +875,8 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
             tcolor = 'green'
             ax.scatter(truexs, trueys, color=tcolor, linestyle=':', marker='o', label='True values') # if nn == 0 else None)
             ax.scatter(truexs, predys, color=color, linestyle=':', marker='+', label='Predicted values') # if nn == 0 else None)
-            ax.scatter(lowxs, lowys, color='black', linestyle=':', marker='v', label='Lowf values') # if nn == 0 else None)
-            ax.set_ylabel('%s Amplitude Difference [log 10]' % (cha))
+            # ax.scatter(lowxs, lowys, color='black', linestyle=':', marker='v', label='Lowf values') # if nn == 0 else None)
+            ax.set_ylabel('%s Amplitude\nDifference [log 10]' % (cha))
         ax.legend()
         plt.xticks(rotation='60')
         plt.tight_layout()

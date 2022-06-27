@@ -19,7 +19,7 @@ def calc_azistrike(data, strikecol='strike', azimuthcol='azimuth', azistrikecol=
 def convert_distances(data, mode=False):
     for col in data.columns:
 
-        if mode == 'inverse':
+        if mode in ['inverse', 'reverse']:
             if col in ['hypodist', 'rupdist', 'rjb', 'rrup', 'rhypo']:
                 data[col] = 10 ** data[col]
         else:

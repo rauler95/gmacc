@@ -69,7 +69,6 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
     compCnt = -1
     for gm, gmParams in predDict.items():
-
         if minmax:
             if obsCont:
                 if gm not in obsDict:
@@ -121,6 +120,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
             if len(comp) > 1 and gm in ['PGD', 'pgd']:
                 titlestr = 'None'
+                print('Smth with titlestring')
                 continue
 
             ax = fig.add_subplot(outer[compCnt * len(gmParams) + (n)])
@@ -131,6 +131,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             lats = num.array(lats)
             data = num.array(vals['vals'])
             if type(data) == float:
+                print('Data type is float')
                 continue
 
             if shmLevels is not None and minmax is not True:
@@ -485,7 +486,6 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                             cmap=cmap, zorder=20.,  # alpha=0.1,
                             edgecolor='white', linewidth=1,
                             vmin=shmLevels.min(), vmax=shmLevels.max())
-
             if figtitle is None:
                 titlestr = '%s' % (source.name)
                 if hasattr(source, 'region'):
@@ -560,6 +560,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
     outRow = len(resCont.stations[sta1].components[comp1].gms)
     figWidth = outCol * 7
     figHight = outRow * 5
+    # figWidth = outCol * 1
+    # figHight = outRow * 1
 
     if not plotgmvise and not plotindi:
         fig = plt.figure(figsize=(figWidth, figHight))
@@ -621,7 +623,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             n += 1
 
             if plotindi:
-                fig = plt.figure(figsize=(10, 5))
+                # fig = plt.figure(figsize=(10, 5))
+                fig = plt.figure(figsize=(8, 4))
                 outer = gridspec.GridSpec(1, 1, wspace=0., hspace=0.)
                 compCnt = 0
                 n = 0
@@ -636,9 +639,11 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
 
             obsmarker = 'o'
             # obscolor = 'darkgreen'
-            obscolor = 'dimgrey'
+            # obscolor = 'dimgrey'
+            obscolor = 'mediumseagreen'
             # ax1color = 'orangered'
             ax1color = 'black'
+            # ax1color = 'goldenrod'
             ax1marker = 'x'
             if len(comp) > 1:
                 ax1color = 'goldenrod'
@@ -646,8 +651,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 if gm in ['PGD', 'pgd']:
                     continue
 
-            # ax2color = 'navy'
-            ax2color = 'black'
+            ax2color = 'darkgreen'
+            # ax2color = 'black'
             ax2marker = '+'
 
             ### data
@@ -755,11 +760,11 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 alpha=0.3, label='μ=0; σ=%.1f' % gmpe_std)
 
             mup = ax2.plot((mindata, maxdata), (nn_mean, nn_mean),
-                color='black', marker='+', linestyle='--', label='μ-PWS')
+                color='black', marker='+', linestyle='--', label='μ-PWS', zorder=-2)
             sigmap = ax2.plot((mindata, maxdata), (nn_mean + nn_std, nn_mean + nn_std),
-                color='black', marker='*', linestyle=':', label='σ-PWS')
+                color='black', marker='*', linestyle=':', label='σ-PWS', zorder=-2)
             ax2.plot((mindata, maxdata), (nn_mean -nn_std, nn_mean -nn_std),
-                color='black', linestyle=':')
+                color='black', linestyle=':', zorder=-2)
             textstr = 'μ=%0.2f; σ=%0.2f' % (nn_mean, nn_std)
             ax2.annotate(textstr, (0.98, 0.98), xycoords='axes fraction',
                         ha='right', va='top', fontsize=12, color=ax2color)
@@ -807,7 +812,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 # if obsCont:
                 #     ax1.set_title('%s vs %s_obs' % (comp, obsComp), fontsize=30)
                 # else:
-                ax1.set_title('%s' % (comp), fontsize=30)
+                # ax1.set_title('%s' % (comp), fontsize=30)
+                ax1.set_title('%s' % (comp), fontsize=15)
 
             fig.add_subplot(ax1)
             fig.add_subplot(ax2)

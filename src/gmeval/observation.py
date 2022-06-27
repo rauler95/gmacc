@@ -277,8 +277,12 @@ class StationContainerObservation(StationContainer):
                         self.stations[sta].components['Z'].gms['GPS'] = GMClass(name='GPS',
                                 value=float(line[8]) / 100., unit='m')
 
-    def modify_disp_trace(self, vP=5.5, plot=True, mode='ebasco'):
+    def modify_disp_trace(self, vP=5.5, plot=True, mode='disp'):
         # from obspy.signal.trigger import pk_baer
+
+        if mode not in ['ebasco', 'disp']:
+            print('Wrong mode of tilt_correction: %s' % mode)
+            exit()
 
         self.calc_distances()
         eq = self.refSource.name
@@ -450,8 +454,10 @@ class StationContainerObservation(StationContainer):
 
                 # try:
                 if mode == 'disp':
-                    tr = trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                    plt.suptitle('Correction on Disp')
+                    # tr = trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
+                    # plt.suptitle('Correction on Disp')
+                    tr = trace_baseline_correction2(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
+                    plt.suptitle('Correction on Disp2 !!!!!!!!!!!!!!')
                 if mode == 'ebasco':
                     tr = trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
                     # tr = trace_baseline_correction_ebasco_own(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
@@ -509,6 +515,7 @@ class StationContainerObservation(StationContainer):
                 plt.tight_layout()
                 plt.subplots_adjust(hspace=0)
                 axes[0].legend(fontsize=10)
+                print('%s%s_%s.png' % (plotdir, sta, mode))
                 f.savefig('%s%s_%s.png' % (plotdir, sta, mode))
 
                 plt.close('all')
@@ -805,7 +812,6 @@ class StationContainerObservation(StationContainer):
                 if delete:
                     for im in imts:
                         del self.stations[sta].components[comp].gms[im]
-
 
     pass
 
@@ -1710,6 +1716,140 @@ def trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt'
         tr.ydata = tr.ydata - num.mean(tr.ydata[:idx1])
 
     return tr
+
+
+
+def trace_baseline_correction2(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt', plot=True):
+
+    if comp == 'N':
+        color = 'green'
+        # continue
+    elif comp == 'E':
+        color = 'orange'
+        # continue
+    elif comp == 'Z':
+        color = 'blue'
+
+    dt = tr.deltat
+
+    if mode == 'tilt':
+
+        if plot:
+            axes[-1].set_title('Tilted (?)')
+
+        # facs = num.polyfit(tr.get_xdata() - tr.tmin, tr.ydata, 1)
+        facs = num.polyfit(tr.get_xdata()[:idx1] - tr.tmin, tr.ydata[:idx1], 1)
+        tr.ydata = tr.ydata - pf(tr.get_xdata() - tr.tmin, facs)
+
+        rawtr = tr.copy()
+        flag = True
+        rang = 3
+        while flag:
+            tr = rawtr.copy()
+            if plot:
+                ax = axes[3]
+                ax.axvline(dt * idx3 + tr.tmin)
+                ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+            facs = num.polyfit(tr.get_xdata()[idx3:] - tr.tmin,
+                            tr.ydata[idx3:], rang)
+            tr.ydata = tr.ydata - pf(tr.get_xdata() - tr.tmin, facs)
+            if plot:
+                ax = axes[4]
+                ax.axvline(dt * idx2 + tr.tmin)
+                ax.axvline(dt * idx1 + tr.tmin)
+                ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+            facs = num.polyfit(tr.get_xdata()[:idx1] - tr.tmin,
+                            tr.ydata[:idx1], rang)
+
+            tr.ydata[:idx2] = tr.ydata[:idx2] - pf(tr.get_xdata()[:idx2]
+                - tr.tmin, facs) + pf(tr.get_xdata()[:idx2] - tr.tmin, facs)[-1]
+
+            tr.ydata -= tr.ydata[0]
+            if plot:
+                ax = axes[5]
+                ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+                ax.axvline(dt * idx2 + tr.tmin)
+
+            flag = False
+
+            # facs = num.polyfit(tr.get_xdata()[idx3:],
+            #                 tr.ydata[idx3:], 1)
+
+            # ampval = tr.ydata[idx3:] - pf(tr.get_xdata()[idx3:], facs)
+
+            # err = num.polyfit(tr.get_xdata()[idx3:] - tr.tmin,
+            #                 tr.ydata[idx3:], 1, full=True)[1][0]
+
+            # ### Define Rang
+            # # cc = num.corrcoef(ampval, tr.ydata[idx3:])
+            # # r = cc[0][1]
+            # # b = facs[-2]
+            # # var = num.var(tr.ydata[idx3:])
+            # # # # print(r, b, var)
+            # # # # print(b, cc2[0][1])
+            # # f = abs(r) / (abs(b) * var)
+            # # print(comp, rang, f, r, b, var)
+            # print(comp, rang, err)
+            # # print(tr.get_xdata()[idx3] - tr.tmin)
+            # # if f < 1000. and rang < 4:
+            # if err > 0.1 and rang < 3:
+            #     rang += 2
+            # else:
+            #     flag = False
+        # exit()
+
+    else:
+        if plot:
+            axes[-1].set_title('None tilt')
+
+        # facs = num.polyfit(vtr.get_xdata() - vtr.tmin, vtr.ydata, 1) # or 2
+        # vtr.ydata = vtr.ydata - pf(vtr.get_xdata() - vtr.tmin, facs)
+        # if plot:
+        #     ax = axes[3]
+        #     ax.plot(vtr.get_xdata(), vtr.ydata, color=color, label=comp)
+
+        # tr = own_integrate(vtr, detrend=False, intval=1)
+        # facs = num.polyfit(tr.get_xdata()[:idx1] - tr.tmin,
+        #                 tr.ydata[:idx1], 1)
+        # tr.ydata = tr.ydata - pf(tr.get_xdata() - tr.tmin, facs)
+        # if plot:
+        #     ax = axes[4]
+        #     ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+        # # facs = num.polyfit(tr.get_xdata()[idx1:] - tr.tmin,
+        # #                 tr.ydata[idx1:], 1)
+        # facs = num.polyfit(tr.get_xdata() - tr.tmin, tr.ydata, 3)
+        # tr.ydata[idx1:] = tr.ydata[idx1:] - pf(tr.get_xdata()[idx1:] - tr.tmin, facs) + pf(tr.get_xdata()[idx1:] - tr.tmin, facs)[0]
+
+        # if plot:
+        #     ax = axes[5]
+        #     ax.axvline(dt * idx2 + tr.tmin)
+        #     ax.axvline(dt * idx3 + tr.tmin)
+        #     ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+        # tr.ydata = tr.ydata - num.mean(tr.ydata[:idx1])
+
+        vtr.highpass(3, 0.05, demean=False)
+
+        if plot:
+            ax = axes[3]
+            ax.plot(vtr.get_xdata(), vtr.ydata, color=color, label=comp)
+
+        tr = own_integrate(vtr, detrend=False, intval=1)
+        # tr.highpass(3, 0.05, demean=False)
+
+        if plot:
+            ax = axes[4]
+            ax.axvline(dt * idx2 + tr.tmin)
+            ax.axvline(dt * idx3 + tr.tmin)
+            ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
+
+    return tr
+
+
 
 
 def trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, mode='tilt', plot=True):
