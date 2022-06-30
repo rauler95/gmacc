@@ -895,7 +895,7 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
                                 mne=tn['mne'], mnd=tn['mnd'], med=tn['med'])
 
         elif source.strike is not None and source.dip is not None \
-            and source.rake is not None:
+                and source.rake is not None:
             print('DC available', source.strike, source.dip, source.rake)
 
             pyrockoSource = gf.DCSource(lat=source.lat, lon=source.lon,

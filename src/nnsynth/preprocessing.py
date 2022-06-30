@@ -240,19 +240,41 @@ def create_subsets(data, rawdata, targets, sortcol, remove_cols=[], eval_percent
     xEval = evalData.drop(columns=targets + [sortcol] + remove_cols)
     yEval = evalData[targets]
 
+    xTrain = xTrain.sort_index().reset_index(drop=True)
+    yTrain = yTrain.sort_index().reset_index(drop=True)
+    xEval = xEval.sort_index().reset_index(drop=True)
+    yEval = yEval.sort_index().reset_index(drop=True)
+    xTest = xTest.sort_index().reset_index(drop=True)
+    yTest = yTest.sort_index().reset_index(drop=True)
+
     return xTrain, yTrain, xTest, yTest, xEval, yEval
 
 
-def write_subsets(filecore, xTrain, yTrain, xTest, yTest, xEval, yEval, scalingDict, targets):
+def write_subsets(filecore, xTrain, yTrain, xTest, yTest, xEval, yEval, scalingDict, targets, filetype='csv'):
     
-    xTrain.to_csv('%s_xtrain.csv' % (filecore), index=False)
-    yTrain.to_csv('%s_ytrain.csv' % (filecore), index=False)
-    xTest.to_csv('%s_xtest.csv' % (filecore), index=False)
-    yTest.to_csv('%s_ytest.csv' % (filecore), index=False)
-    xEval.to_csv('%s_xeval.csv' % (filecore), index=False)
-    yEval.to_csv('%s_yeval.csv' % (filecore), index=False)
+    if filetype.lower() == 'csv':
+        xTrain.to_csv('%s_xtrain.csv' % (filecore), index=False)
+        yTrain.to_csv('%s_ytrain.csv' % (filecore), index=False)
+        xTest.to_csv('%s_xtest.csv' % (filecore), index=False)
+        yTest.to_csv('%s_ytest.csv' % (filecore), index=False)
+        xEval.to_csv('%s_xeval.csv' % (filecore), index=False)
+        yEval.to_csv('%s_yeval.csv' % (filecore), index=False)
+
+    elif filetype.lower() in ['bin', 'binary', 'pickle', 'pkl']:
+        xTrain.to_pickle('%s_xtrain.pkl' % (filecore))
+        yTrain.to_pickle('%s_ytrain.pkl' % (filecore))
+        xTest.to_pickle('%s_xtest.pkl' % (filecore))
+        yTest.to_pickle('%s_ytest.pkl' % (filecore))
+        xEval.to_pickle('%s_xeval.pkl' % (filecore))
+        yEval.to_pickle('%s_yeval.pkl' % (filecore))
+
+    else:
+        print('Wrong filetype: %s' % filetype)
+        exit()
 
     inputcols = list(xTrain.columns)
+    # try:
+    # inputcols.remove('index')
     print(inputcols)
 
     saveContent = [scalingDict, targets, inputcols]
@@ -268,27 +290,45 @@ def write_subsets(filecore, xTrain, yTrain, xTest, yTest, xEval, yEval, scalingD
     return
 
 
-def read_subsets(filecore):
+def read_subsets(filecore, filetype='csv'):
     print(filecore)
 
-    xTrain = pd.read_csv('%s_xtrain.csv' % (filecore))
-    yTrain = pd.read_csv('%s_ytrain.csv' % (filecore))
-    # xTest = pd.read_csv('%s_xtest.csv' % (filecore))
-    # if xTest.values.size == 0:
-    xTest = []
-    # yTest = pd.read_csv('%s_ytest.csv' % (filecore))
-    # if yTest.values.size == 0:
-    yTest = []
-    xEval = pd.read_csv('%s_xeval.csv' % (filecore))
-    yEval = pd.read_csv('%s_yeval.csv' % (filecore))
+    if filetype.lower() == 'csv':
+        xTrain = pd.read_csv('%s_xtrain.csv' % (filecore))
+        yTrain = pd.read_csv('%s_ytrain.csv' % (filecore))
+        # xTest = pd.read_csv('%s_xtest.csv' % (filecore))
+        # if xTest.values.size == 0:
+        xTest = []
+        # yTest = pd.read_csv('%s_ytest.csv' % (filecore))
+        # if yTest.values.size == 0:
+        yTest = []
+        xEval = pd.read_csv('%s_xeval.csv' % (filecore))
+        yEval = pd.read_csv('%s_yeval.csv' % (filecore))
+    
+    elif filetype.lower() in ['bin', 'binary', 'pickle', 'pkl']:
+        xTrain = pd.read_pickle('%s_xtrain.pkl' % (filecore))
+        yTrain = pd.read_pickle('%s_ytrain.pkl' % (filecore))
+        # xTest = pd.read_pickle('%s_xtest.pkl' % (filecore))
+        # if xTest.values.size == 0:
+        xTest = []
+        # yTest = pd.read_pickle('%s_ytest.pkl' % (filecore))
+        # if yTest.values.size == 0:
+        yTest = []
+        xEval = pd.read_pickle('%s_xeval.pkl' % (filecore))
+        yEval = pd.read_pickle('%s_yeval.pkl' % (filecore))
+
+    else:
+        print('Wrong filetype: %s' % filetype)
+        exit()
+
     scalingDict, targets, inputcols = pickle.load(open('%s_scalingdict.bin' % (filecore), 'rb'))
 
-    print(xTrain)
-    print(xTest)
-    print(xEval)
+    # print(xTrain)
+    # print(xTest)
+    # print(xEval)
 
-    print(scalingDict)
-    print(targets)
+    # print(scalingDict)
+    # print(targets)
 
     return xTrain, yTrain, xTest, yTest, xEval, yEval, scalingDict, targets, inputcols
 
