@@ -512,7 +512,8 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
     fig = plt.figure(figsize=(16, 8))
     plt.boxplot(diffs,
                 notch=True,
-                # whis=[5, 95], showfliers=False,
+                # whis=[5, 95],
+                showfliers=False,
                 widths=widths,
                 positions=positions, labels=labels)
     plt.axhline(1, color='black', linestyle='--')
