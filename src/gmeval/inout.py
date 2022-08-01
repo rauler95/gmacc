@@ -176,8 +176,12 @@ def get_finte_fault_data(faultFile, source):
                     source = convert_surface(source, surface)
                 print('Fault from USGS')
             except:
-                print('Could not load %s file.' % faultFile)
-                exit()
+                try:
+                    corners = read_json_faultfile(faultFile, source)
+                    print('Fault from .json')
+                except:
+                    print('Could not load %s file.' % faultFile)
+                    exit()
 
     source.create_rupture_surface()
     if source.risetime is None or source.risetime < 1.:
@@ -755,7 +759,7 @@ def read_usgs_finitefaultfile(faultFile):
     maxdepth = 0
     for patch in ff['features']:
         print(patch)
-        print(patch['properties']['x==ew'])
+        # print(patch['properties']['x==ew'])
         continue
         sps = []
         for ii, sp in enumerate(patch['geometry']['coordinates'][0]):
@@ -813,6 +817,50 @@ def read_usgs_finitefaultfile(faultFile):
     return plainDict
 
 
+def read_json_faultfile(faultFile, source):
+
+    with open(faultFile) as f:
+        ff = json.load(f)
+    # print(ff)
+    lat = ff['metadata']['lat']
+    lon = ff['metadata']['lon']
+    depth = ff['metadata']['depth']
+    mag = ff['metadata']['mag']
+
+    source.lat = float(lat)
+    source.lon = float(lon)
+    source.depth = float(depth)
+    source.magnitude = float(mag)
+
+    if len(ff['features']) > 1:
+        print('Multi patch rupture found. Exit!')
+        exit()
+
+    patch = ff['features'][0]['geometry']['coordinates'][0][0]
+    corners = {}
+    for ii, line in enumerate(patch):
+        # print(ii, line)
+        if ii == 0:
+            keyname = 'UL'
+        elif ii == 1:
+            keyname = 'UR'
+        elif ii == 2:
+            keyname = 'LR'
+        elif ii == 3:
+            keyname = 'LL'
+        else:
+            continue
+
+        corners[keyname] = [float(line[0]), float(line[1]), float(line[2])]
+
+    source.rupture = corners
+    surface = corners2surface(source, corners)
+    if surface:
+        source = convert_surface(source, surface)
+
+    return source
+
+
 def corners2surface(source, corners):
 
     pUR = Point(corners['UR'][0], corners['UR'][1],
@@ -845,10 +893,10 @@ def convert_surface(source, surface):
         print('Set rake manually to 0')
     else:
         print('Point source params: Strike %0.2f; Dip %0.2f; Rake %0.2f'
-                % (source.strike, source.dip, source.rake))
+              % (source.strike, source.dip, source.rake))
 
     print('Fault source params: Strike %0.2f; Dip %0.2f; Rake %0.2f'
-                % (surfstrike, surfdip, source.rake))
+          % (surfstrike, surfdip, source.rake))
 
     source.strike = surfstrike
     source.dip = surfdip

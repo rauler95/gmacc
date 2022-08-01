@@ -1488,6 +1488,7 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
 
         nucx = source.nucleation_x
         nucy = source.nucleation_y
+
     elif vr is not None and WD is not None and LN is not None:
         if nucx is None:
             nucx = 0
@@ -1512,9 +1513,11 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
         duration = float(num.random.uniform(dur, 2 * dur))  # Uncertainty
 
     elif mode == 'pub':
-        if mag is not None or moment is not None:
+        if mag is not None or moment is not None or source:
             if mag is not None:
                 moment = pmt.magnitude_to_moment(mag)
+            elif source:
+                moment = pmt.magnitude_to_moment(source.magnitude)
             # duration = num.sqrt(moment) / 0.5e9
             duration = num.power(moment, 0.33) / 0.25e6
         else:

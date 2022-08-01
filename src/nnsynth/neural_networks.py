@@ -517,6 +517,8 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
                 positions=positions, labels=labels)
     plt.axhline(1, color='black', linestyle='--')
     plt.axhline(-1, color='black', linestyle='--')
+    plt.axhline(0.3, color='black', linestyle='-.')
+    plt.axhline(-0.3, color='black', linestyle='-.')
     plt.axhline(0.5, color='black', linestyle=':')
     plt.axhline(-0.5, color='black', linestyle=':')
     plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
@@ -547,7 +549,6 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
         pc.set_edgecolor(None)
         pc.set_alpha(1)
 
-    print(diffs)
     doublestd = num.array([num.percentile(list(d), [2.5, 97.5]) for d in diffs]).T
     std = num.array([num.percentile(list(d), [16, 84]) for d in diffs]).T
     plt.scatter(positions, [num.median(d) for d in diffs], marker='o', color='darkgrey', s=30, zorder=3, label='median')
@@ -560,6 +561,8 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
     plt.xlabel(xlabel)
     plt.axhline(1, color='black', linestyle='--')
     plt.axhline(-1, color='black', linestyle='--')
+    plt.axhline(0.3, color='black', linestyle='-.')
+    plt.axhline(-0.3, color='black', linestyle='-.')
     plt.axhline(0.5, color='black', linestyle=':')
     plt.axhline(-0.5, color='black', linestyle=':')
     plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
@@ -773,8 +776,12 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
                 cha = target.rsplit('_')[0]
                 sfreq = max([float(t.rsplit('_')[-2]) for t in xEval.columns if ('_lowfr' in t) and (float(t.rsplit('_')[-2]) < 0.5)])
                 scol = '%s_f_%s_lowfr' % (cha, sfreq)
+                # try:
                 predDF[target] = predDF[target] + xEval_true[scol]
                 yEval_true[target] = yEval_true[target] + xEval_true[scol]
+                # except:
+                #     predDF[target] = num.zeros(len(predDF[target]))
+                #     yEval_true[target] = num.zeros(len(yEval_true[target]))
 
     evaluate_gm_general(predDF, yEval_true, targets, outdir, plotmode='violin', violinpoints=200, predirectory=False)
     evaluate_gm_general(predDF, yEval_true, targets, outdir, plotmode='box', predirectory=False)

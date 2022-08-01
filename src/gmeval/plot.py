@@ -640,9 +640,11 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             obsmarker = 'o'
             # obscolor = 'darkgreen'
             # obscolor = 'dimgrey'
-            obscolor = 'mediumseagreen'
+            # obscolor = 'mediumseagreen'
+            obscolor = 'black'
             # ax1color = 'orangered'
-            ax1color = 'black'
+            # ax1color = 'black'
+            ax1color = 'mediumseagreen'
             # ax1color = 'goldenrod'
             ax1marker = 'x'
             if len(comp) > 1:

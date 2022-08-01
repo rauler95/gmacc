@@ -179,36 +179,37 @@ class SourceClass(Object, Cloneable):
             # exit()
 
             surface = PlanarSurface.from_corner_points(top_left=p2,
-                                                        top_right=p1,
-                                                        bottom_left=p3,
-                                                        bottom_right=p4)
+                                                       top_right=p1,
+                                                       bottom_left=p3,
+                                                       bottom_right=p4)
 
             testdist = geodetic.geodetic_distance(p1.longitude, p1.latitude,
-                                                    p4.longitude, p4.latitude)
+                                                  p4.longitude, p4.latitude)
             p5 = geodetic.point_at(p1.longitude, p1.latitude,
-                                    surface.get_strike() + 90., testdist)
+                                   surface.get_strike() + 90., testdist)
             valdist = geodetic.geodetic_distance(p5[0], p5[1],
                                                 p4.longitude, p4.latitude)
-
+            # print(valdist)
             # dipazi = geodetic.azimuth(p1.longitude, p1.latitude, p4.longitude, p4.latitude)-90
             # print('Azimuth Difference', dipazi - surface.get_strike(), dipazi, surface.get_strike())
             # if abs(dipazi - surface.get_strike()) > 5.:
             if valdist > 1:
                 surface = PlanarSurface.from_corner_points(top_left=p1,
-                                                            top_right=p2,
-                                                            bottom_left=p4,
-                                                            bottom_right=p3)
+                                                           top_right=p2,
+                                                           bottom_left=p4,
+                                                           bottom_right=p3)
 
                 testdist = geodetic.geodetic_distance(p1.longitude, p1.latitude,
                                                     p4.longitude, p4.latitude)
                 p5 = geodetic.point_at(p1.longitude, p1.latitude,
-                                        surface.get_strike() + 90., testdist)
+                                       surface.get_strike() + 90., testdist)
                 valdist = geodetic.geodetic_distance(p5[0], p5[1],
                                                     p4.longitude, p4.latitude)
 
                 # dipazi = geodetic.azimuth(p1.longitude, p1.latitude, p4.longitude, p4.latitude)-90
                 # print('Azimuth Difference', dipazi - surface.get_strike(), dipazi, surface.get_strike())
                 # if abs(dipazi - surface.get_strike()) > 5.:
+                # print(valdist)
                 if valdist > 1:
                     print('Strike: %0.1f; dip: %0.1f; rake: %0.1f'
                         % (surface.get_strike(), surface.get_dip(), self.rake))

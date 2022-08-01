@@ -5,6 +5,59 @@ import numpy as num
 import pandas as pd
 
 
+def get_important_features(data, targets, sortcol, n=10, plotpath=False):
+    from sklearn.ensemble import RandomForestRegressor
+    import matplotlib.pyplot as plt
+
+    xTrain = data.drop(columns=targets + [sortcol])
+    yTrain = data[targets]
+
+    # print(xTrain.columns)
+    # print()
+    # print(yTrain.columns)
+    # exit()
+
+    forest = RandomForestRegressor(n_estimators=10, random_state=0)
+    forest.fit(xTrain, yTrain)
+
+    ##### Random Forest
+    importances = forest.feature_importances_
+
+    forest_importances = pd.Series(importances, index=xTrain.columns)
+    # print(forest_importances.sort_values(ascending=False))
+
+    if plotpath:
+        fig, ax = plt.subplots()
+        std = num.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+        forest_importances.plot.bar(yerr=std, ax=ax)
+        ax.set_title("Feature importances using MDI")  # mean decrease impurity
+        ax.set_ylabel("Mean decrease in impurity")
+        fig.tight_layout()
+        fig.savefig('%s/featureimportance_mdi.png' % plotpath)
+
+    ##### Permutation
+    from sklearn.inspection import permutation_importance
+
+    result = permutation_importance(
+        forest, xTrain, yTrain, n_repeats=10, n_jobs=5)
+
+    forest_importances = pd.Series(result.importances_mean, index=xTrain.columns)
+
+    if plotpath:
+        fig, ax = plt.subplots()
+        forest_importances.plot.bar(yerr=result.importances_std, ax=ax)
+        ax.set_title("Feature importances using permutation on full model")
+        ax.set_ylabel("Mean accuracy decrease")
+        fig.tight_layout()
+        fig.savefig('%s/featureimportance_perm.png' % plotpath)
+
+    forest_importances = forest_importances.sort_values(ascending=False)
+    fi = list(forest_importances.keys()[:n])
+    print('The most %s important features:\n' % n, fi)
+
+    return fi
+
+
 def calc_azistrike(data, strikecol='strike', azimuthcol='azimuth', azistrikecol='azistrike', delete=True):
     data.loc[data[azimuthcol] < 0, azimuthcol] = data[azimuthcol][data[azimuthcol] < 0] + 360
     data[azistrikecol] = data[azimuthcol] - data[strikecol]
