@@ -706,7 +706,7 @@ def nn_evaluation(model, history,
         'targets': str(targets).replace(',', ';'),
     }
 
-    evl_batchsize = int(xTrain.shape[0] / 1000.)
+    evl_batchsize = int(xTrain.shape[0] / 100000.)
     for xdat, ydat, name in zip([xTrain, xTest, xEval],
                                 [yTrain, yTest, yEval],
                                 ['Train', 'Test', 'Eval']):
