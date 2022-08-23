@@ -836,6 +836,10 @@ def read_json_faultfile(faultFile, source):
         print('Multi patch rupture found. Exit!')
         exit()
 
+    if ff['features'][0]['geometry']['type'] == 'Point':
+        print('Point source')
+        return source
+
     patch = ff['features'][0]['geometry']['coordinates'][0][0]
     corners = {}
     for ii, line in enumerate(patch):

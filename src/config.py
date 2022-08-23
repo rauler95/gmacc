@@ -64,6 +64,11 @@ class NeuralNetwork(ModuleConfig):
         default=0.,
         help='Fraction of nodes per layer that are dropped out.')
 
+    loss = StringChoice.T(
+        choices=['mse', 'mae', 'CorrelationCoefficient', 'CosineSimilarity'],
+        default='mse',
+        help='Loss function for computing the loss')
+
     activations = List.T(
         String.T(),
         default=['elu'],

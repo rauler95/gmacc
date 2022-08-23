@@ -54,9 +54,9 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
         'maxepochnum': args.maxepochnum,
         'minepochnum': args.minepochnum,
         'outdir': args.outdir,
-
-
+        'loss': args.loss,
     }
+
     for batchsize, hiddenlayer, learning_type, activation, optimizer in iters:
 
         parameters['activation'] = activation
@@ -74,10 +74,11 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                 #     continue
                 print(ycol)
 
-                noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
+                noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
                                         parameters['device'], parameters['activation'],
                                         parameters['optimizer'], parameters['batchsize'],
-                                        parameters['learningtype'], parameters['dropout'],
+                                        parameters['learningtype'], parameters['loss'],
+                                        parameters['dropout'],
                                         hiddenlayer, ycol)
 
                 noutputdir = noutputdir.replace(' ', '')
@@ -100,10 +101,11 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
 
         elif args.targetmode == 'multi':
 
-            noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
+            noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
                                         parameters['device'], parameters['activation'],
                                         parameters['optimizer'], parameters['batchsize'],
-                                        parameters['learningtype'], parameters['dropout'],
+                                        parameters['learningtype'], parameters['loss'],
+                                        parameters['dropout'],
                                         hiddenlayer, 'multi')
 
             noutputdir = noutputdir.replace(' ', '')
@@ -129,7 +131,31 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             exit()
 
 
+# def loss_own_waveform(y_true, y_pred):
+#     import tensorflow.keras.backend as K
+#     import tensorflow.keras.losses as L
+#     mse = L.MeanSquaredError()
+#     return mse(y_true, y_pred)
+
+
+def CorrelationCoefficient(y_true, y_pred):
+    # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
+    import tensorflow.keras.backend as K
+    x = y_true
+    y = y_pred
+    mx = K.mean(x)
+    my = K.mean(y)
+    xm, ym = x - mx, y - my
+    r_num = K.sum(tf.multiply(xm, ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
+
+    r = K.maximum(K.minimum(r, 1.0), -1.0)
+    return 1 - K.square(r)
+
+
 def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
+                                loss='mse',
                                 dropout=None,
                                 inputsize=False, outputsize=1):
 
@@ -188,7 +214,10 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         print('Wrong solver/optimizer chosen')
         exit()
 
-    model.compile(loss='mse',
+    if loss == 'CorrelationCoefficient':
+        loss = CorrelationCoefficient
+
+    model.compile(loss=loss,
                 optimizer=optimizer,
                 metrics=['mae', 'mse'])  # 'msle' # 'accuracy'
 
@@ -201,6 +230,7 @@ def tensorflow_fit(layers, xTrain, yTrain, options, xTest=[], yTest=[]):
 
     model, device = get_compiled_tensorflow_model(layers,
                                 options['activation'], options['optimizer'],
+                                options['loss'],
                                 dropout=options['dropout'],
                                 inputsize=len(xTrain.columns),
                                 outputsize=len(yTrain.columns))
@@ -442,7 +472,8 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
 #####################
 
 def load_model(file):
-    model = tf.keras.models.load_model(file)
+    model = tf.keras.models.load_model(file,
+        custom_objects={'CorrelationCoefficient': CorrelationCoefficient})
     return model
 
 
@@ -516,6 +547,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
                 showfliers=False,
                 widths=widths,
                 positions=positions, labels=labels)
+
     plt.axhline(1, color='black', linestyle='--')
     plt.axhline(-1, color='black', linestyle='--')
     plt.axhline(0.3, color='black', linestyle='-.')
@@ -1051,12 +1083,12 @@ class combined_callback(tf.keras.callbacks.Callback):
         # Plot Learning rate and losses in one figure 
         fig, ax = plt.subplots(figsize=(12, 12))
         for key in self.lossdict.keys():
-            if 'loss' in key:
-                continue
+            # if 'loss' in key:
+            #     continue
             ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
 
         ax.axvline(x=self.best_epoch, color='red', linestyle='--',
-                    label='Best Epoch: %s' % self.best_epoch)
+                   label='Best Epoch: %s' % self.best_epoch)
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
         ax.legend()

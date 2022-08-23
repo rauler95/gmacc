@@ -1721,7 +1721,6 @@ def trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt'
     return tr
 
 
-
 def trace_baseline_correction2(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt', plot=True):
 
     if comp == 'N':
@@ -1851,8 +1850,6 @@ def trace_baseline_correction2(tr, vtr, comp, idx1, idx2, idx3, axes, mode='tilt
             ax.plot(tr.get_xdata(), tr.ydata, color=color, label=comp)
 
     return tr
-
-
 
 
 def trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, mode='tilt', plot=True):
