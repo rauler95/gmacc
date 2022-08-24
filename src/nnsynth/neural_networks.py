@@ -93,9 +93,9 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                 model, history = tensorflow_fit(hiddenlayer, xTrain, yTrain[ycol].to_frame(),
                                             parameters, xTest, yTest)
 
-                nn_evaluation(model, history,
-                    xTrain, yTrain[ycol].to_frame(), xTest, yTest, xEval, yEval,
-                    [ycol], scalingDict, hiddenlayer, parameters, targetwise=True)
+                # nn_evaluation(model, history,
+                #     xTrain, yTrain[ycol].to_frame(), xTest, yTest, xEval, yEval,
+                #     [ycol], scalingDict, hiddenlayer, parameters, targetwise=True)
 
                 reset_session(model, history)
 
@@ -120,9 +120,9 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             model, history = tensorflow_fit(hiddenlayer, xTrain, yTrain,
                                             parameters, xTest, yTest)
 
-            nn_evaluation(model, history,
-                xTrain, yTrain, xTest, yTest, xEval, yEval,
-                targets, scalingDict, hiddenlayer, parameters, targetwise=True)
+            # nn_evaluation(model, history,
+            #     xTrain, yTrain, xTest, yTest, xEval, yEval,
+            #     targets, scalingDict, hiddenlayer, parameters, targetwise=True)
 
             reset_session(model, history)
 
