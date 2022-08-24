@@ -60,14 +60,15 @@ class NeuralNetwork(ModuleConfig):
         default='multi',
         help='Whether to include all targets in the last layer (multi) or calculate on NN per target (single).')
 
-    dropout = Float.T(
-        default=0.,
-        help='Fraction of nodes per layer that are dropped out.')
+    dropouts = List.T(
+        Float.T(),
+        default=[0.],
+        help='List of fraction of nodes per layer that are dropped out. Floats between 0 and 1.')
 
-    loss = StringChoice.T(
-        choices=['mse', 'mae', 'CorrelationCoefficient', 'CosineSimilarity'],
-        default='mse',
-        help='Loss function for computing the loss')
+    losses = List.T(
+        String.T(),
+        default=['mse'],
+        help='List of loss functions to iterate through, E.g. mse, mae, CorrelationCoefficient, CosineSimilarity')
 
     activations = List.T(
         String.T(),

@@ -45,24 +45,24 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
     print('Number of inputs:', fac)
 
     iters = itertools.product(batchsizes, args.hiddenlayers, args.learningtypes,
-            args.activations, args.optimizers)
+            args.activations, args.optimizers, args.losses, args.dropouts)
 
     parameters = {
         'device': args.device,
-        'dropout': args.dropout,
         'validepochnum': args.validepochnum,
         'maxepochnum': args.maxepochnum,
         'minepochnum': args.minepochnum,
         'outdir': args.outdir,
-        'loss': args.loss,
     }
 
-    for batchsize, hiddenlayer, learning_type, activation, optimizer in iters:
+    for batchsize, hiddenlayer, learning_type, activation, optimizer, loss, dropout in iters:
 
         parameters['activation'] = activation
         parameters['learningtype'] = learning_type
         parameters['optimizer'] = optimizer
         parameters['batchsize'] = int(batchsize)
+        parameters['loss'] = loss
+        parameters['dropout'] = dropout
         # print(options)
         print(batchsize, hiddenlayer, learning_type, activation, optimizer)
 
@@ -136,6 +136,7 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
 #     import tensorflow.keras.losses as L
 #     mse = L.MeanSquaredError()
 #     return mse(y_true, y_pred)
+
 
 
 def CorrelationCoefficient(y_true, y_pred):
