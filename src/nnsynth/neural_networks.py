@@ -219,8 +219,7 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = CorrelationCoefficient
 
     model.compile(loss=loss,
-                optimizer=optimizer,
-                metrics=['mae', 'mse'])  # 'msle' # 'accuracy'
+                optimizer=optimizer)  # 'msle' # 'accuracy'
 
     print(model.summary())
 
