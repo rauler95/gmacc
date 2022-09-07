@@ -395,3 +395,29 @@ def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
     coords = num.array(coords)
 
     return coords
+
+def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
+    coords = []
+    dcor = min(mapextent[1], mapextent[0])
+
+    r = num.logspace(num.log10(rmin), num.log10(dcor), int(ncoords / 1.25))
+    theta = (num.linspace(0, 2 * num.pi, int(ncoords * 1.25)) 
+        + random.random() * 2 * num.pi)
+
+    R, Theta = num.meshgrid(r, theta)
+
+    runc = 0.1
+    thataunc = 0.1
+    lons = (R * (1 + num.random.uniform(-runc, runc, R.shape))) \
+        * num.cos(Theta + num.random.uniform(-thataunc * num.pi, thataunc * num.pi, Theta.shape))\
+        + source.lon
+    lats = (R * (1 + num.random.uniform(-runc, runc, R.shape))) \
+        * num.sin(Theta + num.random.uniform(-thataunc * num.pi, thataunc * num.pi, Theta.shape)) \
+        + source.lat
+
+    for lon, lat in zip(lons.flatten(), lats.flatten()):
+        coords.append([lon, lat])
+
+    coords = num.array(coords)
+
+    return coords
