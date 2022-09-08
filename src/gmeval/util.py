@@ -377,13 +377,16 @@ def rectangular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
     return coords
 
 
-def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
+def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=True):
     coords = []
     dcor = min(mapextent[1], mapextent[0])
 
-    r = num.logspace(num.log10(rmin), num.log10(dcor), int(ncoords / 1.25))
+    if log:
+        r = num.logspace(num.log10(rmin), num.log10(dcor), int(ncoords / 1.25))
+    else:
+        r = num.linspace(rmin, dcor, int(ncoords / 1.25))
     theta = num.linspace(0, 2 * num.pi, int(ncoords * 1.25)) \
-        + random.random() * 2 * num.pi
+        + 2 * num.pi  # * random.random()
 
     R, Theta = num.meshgrid(r, theta)
     lons = R * num.cos(Theta) + source.lon
@@ -397,11 +400,14 @@ def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
     return coords
 
 
-def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
+def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=True):
     coords = []
     dcor = min(mapextent[1], mapextent[0])
 
-    r = num.logspace(num.log10(rmin), num.log10(dcor), int(ncoords / 1.25))
+    if log:
+        r = num.logspace(num.log10(rmin), num.log10(dcor), int(ncoords / 1.25))
+    else:
+        r = num.linspace(rmin, dcor, int(ncoords / 1.25))
     theta = (num.linspace(0, 2 * num.pi, int(ncoords * 1.25)) 
         + random.random() * 2 * num.pi)
 
