@@ -131,19 +131,54 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             exit()
 
 
-# def loss_own_waveform(y_true, y_pred):
-#     import tensorflow.keras.backend as K
-#     import tensorflow.keras.losses as L
-#     mse = L.MeanSquaredError()
-#     return mse(y_true, y_pred)
+# def CorrelationCoefficient(num_nonwaveform):
+#     def loss(y_true, y_pred):
+#         '''
+#         At the moment the first three values are assumed to be non-waveform
+#         '''
+#         # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
+#         import tensorflow.keras.backend as K
+#         import tensorflow.keras.losses as L
 
+#         xs = y_true[:num_nonwaveform]
+#         ys = y_pred[:num_nonwaveform]
 
+#         mse = L.MeanSquaredError()
+#         rms = mse(xs, ys)
 
-def CorrelationCoefficient(y_true, y_pred):
+#         x = y_true[num_nonwaveform:]
+#         y = y_pred[num_nonwaveform:]
+#         mx = K.mean(x)
+#         my = K.mean(y)
+#         xm, ym = x - mx, y - my
+#         r_num = K.sum(tf.multiply(xm, ym))
+#         r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+#         r = r_num / r_den
+
+#         r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+#         cc = 1 - K.square(r)
+
+#         # return cc + K.sqrt(rms)
+#         return cc + rms
+
+def CorrelationCoefficient1(y_true, y_pred):
+    '''
+    At the moment the first three values are assumed to be non-waveform
+    '''
     # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
     import tensorflow.keras.backend as K
-    x = y_true
-    y = y_pred
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 1
+    xs = y_true[:num_nonwaveform]
+    ys = y_pred[:num_nonwaveform]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    x = y_true[num_nonwaveform:]
+    y = y_pred[num_nonwaveform:]
     mx = K.mean(x)
     my = K.mean(y)
     xm, ym = x - mx, y - my
@@ -152,7 +187,75 @@ def CorrelationCoefficient(y_true, y_pred):
     r = r_num / r_den
 
     r = K.maximum(K.minimum(r, 1.0), -1.0)
-    return 1 - K.square(r)
+
+    cc = 1 - K.square(r)
+
+    # return cc + K.sqrt(rms)
+    return cc + rms
+
+
+def CorrelationCoefficient2(y_true, y_pred):
+    '''
+    At the moment the first three values are assumed to be non-waveform
+    '''
+    # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
+    import tensorflow.keras.backend as K
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 2
+    xs = y_true[:num_nonwaveform]
+    ys = y_pred[:num_nonwaveform]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    x = y_true[num_nonwaveform:]
+    y = y_pred[num_nonwaveform:]
+    mx = K.mean(x)
+    my = K.mean(y)
+    xm, ym = x - mx, y - my
+    r_num = K.sum(tf.multiply(xm, ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
+
+    r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    cc = 1 - K.square(r)
+
+    # return cc + K.sqrt(rms)
+    return cc + rms
+
+
+def CorrelationCoefficient3(y_true, y_pred):
+    '''
+    At the moment the first three values are assumed to be non-waveform
+    '''
+    # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
+    import tensorflow.keras.backend as K
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 3
+    xs = y_true[:num_nonwaveform]
+    ys = y_pred[:num_nonwaveform]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    x = y_true[num_nonwaveform:]
+    y = y_pred[num_nonwaveform:]
+    mx = K.mean(x)
+    my = K.mean(y)
+    xm, ym = x - mx, y - my
+    r_num = K.sum(tf.multiply(xm, ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
+
+    r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    cc = 1 - K.square(r)
+
+    # return cc + K.sqrt(rms)
+    return cc + rms
 
 
 def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
@@ -215,8 +318,12 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         print('Wrong solver/optimizer chosen')
         exit()
 
-    if loss == 'CorrelationCoefficient':
-        loss = CorrelationCoefficient
+    if loss == 'CorrelationCoefficient3':
+        loss = CorrelationCoefficient3
+    elif loss == 'CorrelationCoefficient2':
+        loss = CorrelationCoefficient2
+    elif loss == 'CorrelationCoefficient1':
+        loss = CorrelationCoefficient1
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -473,7 +580,9 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
 
 def load_model(file):
     model = tf.keras.models.load_model(file,
-        custom_objects={'CorrelationCoefficient': CorrelationCoefficient})
+        custom_objects={'CorrelationCoefficient1': CorrelationCoefficient1,
+                        'CorrelationCoefficient2': CorrelationCoefficient2,
+                        'CorrelationCoefficient3': CorrelationCoefficient3})
     return model
 
 
