@@ -245,7 +245,7 @@ class GroundMotionData(ModuleConfig):
         help='List of two numbers which define the map size in degree around the hypocenter.')
 
     mapmode = StringChoice.T(
-        choices=['rectangular', 'circular', 'random'],
+        choices=['rectangular', 'circular', 'random', 'random_circular'],
         default='rectangular',
         help='Mode of the map to be calculated for.')
 

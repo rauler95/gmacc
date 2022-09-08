@@ -396,6 +396,7 @@ def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
 
     return coords
 
+
 def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05):
     coords = []
     dcor = min(mapextent[1], mapextent[0])
