@@ -245,6 +245,8 @@ def CorrelationCoefficient3(y_true, y_pred):
     y = y_pred[num_nonwaveform:]
     mx = K.mean(x)
     my = K.mean(y)
+    # mx = x.mean()
+    # my = y.mean()
     xm, ym = x - mx, y - my
     r_num = K.sum(tf.multiply(xm, ym))
     r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
@@ -256,6 +258,75 @@ def CorrelationCoefficient3(y_true, y_pred):
 
     # return cc + K.sqrt(rms)
     return cc + rms
+
+
+def ownCorrelationCoefficient3(y_true, y_pred):
+    '''
+    An idea would be to use a normalized cross-correlation and
+    its absolute maximum value as well as the lag time to those maximum 
+    '''
+    # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
+    import tensorflow.keras.backend as K
+    import tensorflow.keras.losses as L
+    # from tensorflow_probability.python.internal import dtype_util
+
+
+    num_nonwaveform = 3
+    xs = y_true[:num_nonwaveform]
+    ys = y_pred[:num_nonwaveform]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    x = y_true[num_nonwaveform:]
+    y = y_pred[num_nonwaveform:]
+
+    # x /= tf.norm(x) 
+    # y /= tf.norm(y) 
+    # mx = K.mean(x)
+    # my = K.mean(y)
+    # x /= float(tf.norm(x)) 
+    # y /= float(tf.norm(y)) 
+
+    # mx = x.mean()
+    # my = y.mean()
+    # xm, ym = x - mx, y - my
+    # r_num = K.sum(tf.multiply(xm, ym))
+    # r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    # r = r_num / r_den
+
+    # r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    # cc = 1 - K.square(r)
+    # cc2 = (1 - (num.correlate(x, y, mode='full').max())**2)
+    # cc3 = 1 - num.corrcoef(x, y)[0, 1]**2
+    # cc = r
+    # cc2 = num.correlate(x, y, mode='full').max()
+    # cc3 = num.corrcoef(x, y)[0, 1]
+    # print(cc)
+    # print(cc2)
+    # print(cc3)
+    # print()
+    dtype = x.dtype
+    x = tf.complex(x, 0.)
+    y = tf.complex(y, 0.)
+    print(x)
+    fft_data = tf.multiply(tf.signal.fft(x), tf.signal.fft(y))
+    print(fft_data)
+    shifted_product = tf.signal.ifft(fft_data)
+    print(shifted_product)
+
+    # Cast back to real-valued if x was real to begin with.
+    shifted_product2 = tf.cast(shifted_product, dtype)
+    print(shifted_product2)
+    row_max = K.max(shifted_product2, axis=1)
+    print(row_max)
+    cc = 1 - tf.math.reduce_mean(row_max, axis=0)
+    # print(cc.numpy)
+    # exit()
+    # return cc + K.sqrt(rms)
+    return cc #+ rms
+
 
 
 def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
@@ -455,14 +526,9 @@ def check_multi_or_single_nn(path, targets):
     return targets
 
 
-def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
-    print(modelfile)
-    model = load_model(modelfile)
-    try:
-        scalingDict, targets, inputcols = load_scalingdict(suppfile)
-    except ValueError:
-        scalingDict, targets = load_scalingdict(suppfile)
-        inputcols = None
+def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
+    # print(modelfile)
+    # model = load_model(modelfile)
 
     lons, lats = coords.T
 
@@ -509,6 +575,22 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
         cols = [col for col in scalingDict.keys() if col in data.columns]
     data = data[cols]
     print(data.columns)
+
+    return data
+
+
+def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
+    print(modelfile)
+    model = load_model(modelfile)
+    lons, lats = coords.T
+
+    try:
+        scalingDict, targets, inputcols = load_scalingdict(suppfile)
+    except ValueError:
+        scalingDict, targets = load_scalingdict(suppfile)
+        inputcols = None
+
+    data = prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords)
 
     ## Predicting
     pred = model_predict(model, data, int(data.shape[0] / 100))

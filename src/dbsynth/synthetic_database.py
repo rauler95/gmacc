@@ -84,6 +84,10 @@ def create_random_source(sourcemode, ii):
     dip = float(num.random.randint(1, 89))
     rake = float(num.random.randint(-180, 180))
     
+    # DC = pmt.MomentTensor(m=pmt.random_dc())
+    # # DC = DC.random_dc()
+    # (s1, d1, r1), (s2, d2, r2) = DC.both_strike_dip_rake()
+
     lat = num.random.uniform(-10., 10.)
     lon = num.random.uniform(-10., 10.)
     depth = num.random.uniform(0.1, 10.)

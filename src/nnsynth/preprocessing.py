@@ -260,7 +260,7 @@ def scale(scalingDict, data, mode='forward', verbose=False):
     return pd.DataFrame(ndata)
 
 
-def create_subsets(data, rawdata, targets, sortcol, remove_cols=[], eval_percent=0.2, test_percent=0.0, randomseed=False):
+def create_subsets(data, targets, sortcol, remove_cols=[], eval_percent=0.2, test_percent=0.0, randomseed=False):
 
     if randomseed:
         random.seed(randomseed)
