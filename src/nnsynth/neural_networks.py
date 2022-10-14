@@ -20,7 +20,7 @@ import gmacc.gmeval.sources as GMs
 
 
 def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
-        scalingDict, targets, inputcols):
+        scalingDict, targets, inputcols, prefix=''):
 
     if args.device == 'cpu':
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -39,7 +39,7 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
     for bs in args.batchsizes:
         batchsizes.append(int(xLen * bs))
     
-    sortcol = 'evID'
+    # sortcol = 'evID'
 
     fac = len(xTrain.columns)
     print('Number of inputs:', fac)
@@ -66,7 +66,7 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
         # print(options)
         print(batchsize, hiddenlayer, learning_type, activation, optimizer)
 
-        appendix = ''
+        # appendix = ''
 
         if args.targetmode == 'single':
             for ycol in targets:
@@ -74,7 +74,7 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                 #     continue
                 print(ycol)
 
-                noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
+                noutputdir = '%s/%s%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir, prefix,
                                         parameters['device'], parameters['activation'],
                                         parameters['optimizer'], parameters['batchsize'],
                                         parameters['learningtype'], parameters['loss'],
@@ -93,15 +93,16 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
                 model, history = tensorflow_fit(hiddenlayer, xTrain, yTrain[ycol].to_frame(),
                                             parameters, xTest, yTest)
 
-                # nn_evaluation(model, history,
-                #     xTrain, yTrain[ycol].to_frame(), xTest, yTest, xEval, yEval,
-                #     [ycol], scalingDict, hiddenlayer, parameters, targetwise=True)
+                nn_evaluation(model, history,
+                    xTrain, yTrain[ycol].to_frame(), xTest, yTest, xEval, yEval,
+                    [ycol], scalingDict, hiddenlayer, parameters, 
+                    targetwise=True, prefix=prefix)
 
                 reset_session(model, history)
 
         elif args.targetmode == 'multi':
 
-            noutputdir = '%s/%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir,
+            noutputdir = '%s/%s%s_%s_%s_%s_%s_%s_%s_%s-%s' % (args.outdir, prefix,
                                         parameters['device'], parameters['activation'],
                                         parameters['optimizer'], parameters['batchsize'],
                                         parameters['learningtype'], parameters['loss'],
@@ -120,9 +121,10 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             model, history = tensorflow_fit(hiddenlayer, xTrain, yTrain,
                                             parameters, xTest, yTest)
 
-            # nn_evaluation(model, history,
-            #     xTrain, yTrain, xTest, yTest, xEval, yEval,
-            #     targets, scalingDict, hiddenlayer, parameters, targetwise=True)
+            nn_evaluation(model, history,
+                xTrain, yTrain, xTest, yTest, xEval, yEval,
+                targets, scalingDict, hiddenlayer, parameters, 
+                targetwise=True, prefix=prefix)
 
             reset_session(model, history)
 
@@ -326,7 +328,6 @@ def ownCorrelationCoefficient3(y_true, y_pred):
     # exit()
     # return cc + K.sqrt(rms)
     return cc #+ rms
-
 
 
 def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
@@ -570,6 +571,7 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
     # there should be a fix for that to be sure when this is really correct !!!
     # cols = [col for col in scalingDict.keys() if col in data.columns]
     if inputcols is not None:
+        # cols = [col for col in inputcols if col in data.columns]
         cols = inputcols
     else:
         cols = [col for col in scalingDict.keys() if col in data.columns]
@@ -661,27 +663,28 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
 #####################
 
 def load_model(file):
-    model = tf.keras.models.load_model(file,
+    return tf.keras.models.load_model(file,
         custom_objects={'CorrelationCoefficient1': CorrelationCoefficient1,
                         'CorrelationCoefficient2': CorrelationCoefficient2,
                         'CorrelationCoefficient3': CorrelationCoefficient3})
-    return model
 
 
-def load_scalingdict(file):
-    print(file)
-    try:
-        scalingDict, targets, inputcols = pickle.load(open(file, 'rb'))
-        return scalingDict, targets, inputcols
+# def load_scalingdict(file):
+#     print(file)
+#     try:
+#         scalingDict, targets, inputcols = pickle.load(open(file, 'rb'))
+#         return scalingDict, targets, inputcols
 
-    except ValueError:
-        scalingDict, targets = pickle.load(open(file, 'rb'))
-        return scalingDict, targets
+#     except ValueError:
+#         scalingDict, targets = pickle.load(open(file, 'rb'))
+#         return scalingDict, targets
+
+def load_supportinfo(file):
+    return pickle.load(open(file, 'rb'))
 
 
 def model_predict(model, data, batchsize=100):
-    output = model.predict(data, batch_size=batchsize).T
-    return output
+    return model.predict(data, batch_size=batchsize).T
 
 
 def get_predict_df(model, data, targets, batchsize=100):
@@ -873,7 +876,7 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
 def nn_evaluation(model, history,
                 xTrain, yTrain, xTest, yTest, xEval, yEval,
                 targets, scalingDict,
-                hiddenlayer, options, targetwise=True):
+                hiddenlayer, options, targetwise=True, prefix=''):
 
     #### Mit scaling dict noch verrechnene, damit man die werte besser interpretieren kann?
     outputdir = options['outdir'].replace('//', '/')
@@ -882,6 +885,7 @@ def nn_evaluation(model, history,
     resultfile = os.path.join(resultdir, 'results_NN.csv')
 
     resultDict = {
+        'prefix': prefix,
         'layers': str(hiddenlayer).replace(',', ' '),
         'device': options['device'],
         'activation': options['activation'],
@@ -909,10 +913,15 @@ def nn_evaluation(model, history,
                 continue
 
         evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
+        print(evaluation)
         prediction = model_predict(model, xdat, batchsize=evl_batchsize)
         trueval = ydat.values.T
+        if type(evaluation) is float:
+            evaluation = [evaluation]
+    
         evalcriteria = list(history.history.keys())[:len(evaluation)]
         # print(name, evaluation)
+        print(evalcriteria)
 
         for ii in range(len(evaluation)):
             resultDict['%s_%s' % (name, evalcriteria[ii])] = '%0.7f' % evaluation[ii]
@@ -1116,6 +1125,122 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
     plt.close('all')
 
     return
+
+
+def modify_col_ablation(mode, data, col):
+    if mode == 'random':
+        data[col] = num.random.uniform(0, 1, len(data[col]))
+    elif mode == 'shuffle':
+        data[col] = data[col].sample(frac=1).values
+    else:
+        print('Wrong mode')
+        exit()
+    return data
+
+
+def feature_importance_one_rng(model, xEval, yEval, twoparams=False, 
+        losses=['loss', 'mae', 'mse'],
+        mode='random'):
+    '''
+    modes:
+    - random: uniform random between  0 and 1
+    - shuffle: shuffles the values of one column
+    '''
+    import pandas as pd
+
+    df = pd.DataFrame(columns=losses)
+    df.loc['None_replaced'] = model.evaluate(xEval, yEval)
+
+    nxEval = xEval.copy(deep=True)
+    for col in xEval.columns:
+        nxEval = modify_col_ablation(mode, nxEval, col)
+
+    df.loc['All_replaced'] = model.evaluate(nxEval, yEval)
+
+    for col in xEval.columns:
+        nxEval = xEval.copy(deep=True)
+        nxEval = modify_col_ablation(mode, nxEval, col)
+
+        df.loc['     %s' % col] = model.evaluate(nxEval, yEval)
+
+    if twoparams:
+        blacklist = []
+        for col1 in xEval.columns:
+            nxEval = xEval.copy(deep=True)
+            nxEval = modify_col_ablation(mode, nxEval, col1)
+
+            for col2 in xEval.columns:
+
+                if col1 == col2:
+                    continue
+
+                if col2 in blacklist:
+                    continue
+
+                nxEval = modify_col_ablation(mode, nxEval, col2)
+
+                df.loc['%s & %s' % (col1, col2)] = model.evaluate(nxEval, yEval)
+
+            blacklist.append(col1)
+
+    print('Named features were replaced by %s:' % mode)
+    print(df.sort_values(by='loss'))
+
+
+def feature_importance_one_true(model, xEval, yEval, twoparams=False, 
+        losses=['loss', 'mae', 'mse'],
+        mode='random'):
+    '''
+    modes:
+    - random: uniform random between  0 and 1
+    - shuffle: shuffles the values of one column
+    '''
+    import pandas as pd
+
+    df = pd.DataFrame(columns=losses)
+    df.loc['None_replaced'] = model.evaluate(xEval, yEval)
+
+    nxEval = xEval.copy(deep=True)
+    for col in xEval.columns:
+        nxEval = modify_col_ablation(mode, nxEval, col)
+
+    df.loc['All_replaced'] = model.evaluate(nxEval, yEval)
+
+    for truecol in xEval.columns:
+        nxEval = xEval.copy(deep=True)
+        for col in xEval.columns:
+            if col == truecol:
+                continue
+            nxEval = modify_col_ablation(mode, nxEval, col)
+
+        df.loc['     %s' % truecol] = model.evaluate(nxEval, yEval)
+
+    if twoparams:
+        blacklist = []
+        for truecol1 in xEval.columns:
+            nxEval = xEval.copy(deep=True)
+
+            for truecol2 in xEval.columns:
+
+                if truecol1 == truecol2:
+                    continue
+
+                if truecol2 in blacklist:
+                    continue
+
+                for col in xEval.columns:
+                    if col == truecol1 or col == truecol2:
+                        continue
+
+                    nxEval = modify_col_ablation(mode, nxEval, col)
+
+                df.loc['%s & %s' % (truecol1, truecol2)] = model.evaluate(nxEval, yEval)
+
+            blacklist.append(truecol1)
+
+    print('All features except the named ones were replaced by %s:' % mode)
+    print(df.sort_values(by='loss'))
+
 
 
 #####################
