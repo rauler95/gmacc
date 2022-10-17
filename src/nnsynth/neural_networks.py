@@ -347,13 +347,20 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         print("\nUsing a CPU\n")
         device = 'cpu'
 
+    nlayers = []
+    for lay in layers:
+        if type(lay) is str and 'n' in lay:
+            nlayers.append(int(lay.replace('n', '')) * inputsize)
+        else:
+            nlayers.append(lay)
+
     modellayers = []
 
     # from tensorflow.keras.layers.experimental import preprocessing
     # norm = preprocessing.Normalization(input_shape=(inputsize,))
     # modellayers.append(norm)
 
-    for ii, lay in enumerate(layers):
+    for ii, lay in enumerate(nlayers):
         print(lay)
         if ii == 0 and inputsize:
             layer = tf.keras.layers.Dense(lay, activation=activation,

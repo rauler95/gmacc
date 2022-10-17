@@ -93,8 +93,13 @@ class NeuralNetwork(ModuleConfig):
     hiddenlayers = List.T(
         List.T(),
         default=[[10, 10]],
-        help='A list of list, each list consists of a number corresponding to nodes and the number of numbers to the number of layers')
-
+        help='''
+        A list of list, each list consists of a number corresponding to nodes
+        and the number of numbers to the number of layers.
+        It is also possible to define the hidderlayers depending on the input-
+        size. For that, use an additional 'n',
+        e.g. '5n', 5 times the number of input features as node.
+        ''')
     def get_config(self):
         '''
         Reads config from a YAML file.
