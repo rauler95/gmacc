@@ -100,6 +100,7 @@ class NeuralNetwork(ModuleConfig):
         size. For that, use an additional 'n',
         e.g. '5n', 5 times the number of input features as node.
         ''')
+    
     def get_config(self):
         '''
         Reads config from a YAML file.

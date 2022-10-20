@@ -20,12 +20,12 @@ import gmacc.gmeval.sources as GMs
 
 
 def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
-        scalingDict, targets, inputcols, prefix=''):
+        scalingDict, targets, inputcols, prefix='', gpu_num="1"):
 
     if args.device == 'cpu':
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_num
 
     # print(scalingDict)
     # print(targets)
@@ -1561,7 +1561,7 @@ class triangle_callback(tf.keras.callbacks.Callback):
 
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig('%s/loss-learning_rate-epoch.png' % (outputdir))
+        plt.savefig('%s/loss-learning_rate-epoch.png' % (self.outputdir))
         plt.close('all')
 
 
