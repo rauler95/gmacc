@@ -538,7 +538,7 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
     # print(modelfile)
     # model = load_model(modelfile)
 
-    lons, lats = coords.T
+    lons, lats = num.array(coords).T
 
     data = {}
     for params in scalingDict.keys():
@@ -591,15 +591,19 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
 def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
     print(modelfile)
     model = load_model(modelfile)
-    lons, lats = coords.T
+    lons, lats = num.array(coords).T
 
     try:
-        scalingDict, targets, inputcols = load_scalingdict(suppfile)
+        scalingDict, targets, inputcols = load_supportinfo(suppfile)
     except ValueError:
-        scalingDict, targets = load_scalingdict(suppfile)
+        scalingDict, targets = load_supportinfo(suppfile)
         inputcols = None
 
     data = prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords)
+
+    print()
+    print(data)
+    print()
 
     ## Predicting
     pred = model_predict(model, data, int(data.shape[0] / 100))
@@ -623,7 +627,6 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
         ns = 'PR.S%s' % (idx)
 
         for chagm in targets:
-            print(chagm)
             t = chagm.rsplit('_')
 
             t = chagm.rsplit('_')
@@ -770,7 +773,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
 
 
 def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False,
-        points=20, ymin=-2, ymax=2):
+        points=20, ymin=-2, ymax=2, axhline=1):
 
     fig = plt.figure(figsize=(8, 6))
     widths = (num.nanmax(positions) - num.nanmin(positions)) / (len(positions))
@@ -793,13 +796,16 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
     plt.xticks(positions, labels=labels)
     plt.ylabel('Difference')
     plt.xlabel(xlabel)
-    plt.axhline(1, color='black', linestyle='--')
-    plt.axhline(-1, color='black', linestyle='--')
-    plt.axhline(0.3, color='black', linestyle='-.')
-    plt.axhline(-0.3, color='black', linestyle='-.')
-    plt.axhline(0.5, color='black', linestyle=':')
-    plt.axhline(-0.5, color='black', linestyle=':')
-    plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
+    if axhline:
+        plt.axhline(1 * axhline, color='black', linestyle='--')
+        plt.axhline(-1 * axhline, color='black', linestyle='--')
+        plt.axhline(0.3 * axhline, color='black', linestyle='-.')
+        plt.axhline(-0.3 * axhline, color='black', linestyle='-.')
+        plt.axhline(0.5 * axhline, color='black', linestyle=':')
+        plt.axhline(-0.5 * axhline, color='black', linestyle=':')
+        plt.axhline(0 * axhline, color='black', linestyle='-', alpha=0.25, zorder=-2)
+    else:
+        plt.grid('both')
     plt.ylim((ymin, ymax))
     plt.xticks(rotation='60')
     plt.legend()
@@ -863,14 +869,16 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
                 if len(diff) == 0:
                     diff = [0.]
                 diffs.append(diff)
-                pltlabels.append('%0.2f\n(%s)' % ((colranges[imag+1] + colranges[imag]) / 2, len(diff)))
+                pltlabels.append('%0.2f\n(%s)' % ((colranges[imag + 1] + colranges[imag]) / 2, len(diff)))
 
             if plotmode == 'box':
                 boxplot(diffs, positions, pltcols, xlabel=col,
-                    outdir=outdir, fileprefix='%s_%s_' % (target, col))
+                    outdir=outdir, fileprefix='%s_%s_' % (target, col),
+                    ymin=-0.2, ymax=0.2, axhline=0)
             elif plotmode == 'violin':
                 violinplot(diffs, positions, pltcols, xlabel=col,
                     outdir=outdir, fileprefix='%s_%s_' % (target, col), 
+                    ymin=-0.2, ymax=0.2, axhline=0,
                     points=violinpoints)
             else:
                 print('Wrong plotmode: %s' % plotmode)

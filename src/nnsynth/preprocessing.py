@@ -53,7 +53,7 @@ def get_important_features(data, targets, sortcol, n=10, plotpath=False):
 
     forest_importances = forest_importances.sort_values(ascending=False)
     fi = list(forest_importances.keys()[:n])
-    print('The most %s important features:\n' % n, fi)
+    print('The %s most important features:\n' % n, fi)
 
     return fi
 
@@ -260,7 +260,8 @@ def scale(scalingDict, data, mode='forward', verbose=False):
     return pd.DataFrame(ndata)
 
 
-def create_subsets(data, targets, sortcol, remove_cols=[], eval_percent=0.2, test_percent=0.0, randomseed=False):
+def create_subsets(data, targets, sortcol, remove_cols=[], eval_percent=0.2, 
+        test_percent=0.0, randomseed=False):
 
     if randomseed:
         random.seed(randomseed)
@@ -386,19 +387,19 @@ def read_subsets(filecore, filetype='csv'):
     return xTrain, yTrain, xTest, yTest, xEval, yEval, scalingDict, targets, inputcols
 
 
-def read_evaluation_data(filecore):
-    print(filecore)
+# def read_evaluation_data(filecore):
+#     print(filecore)
 
-    xEval = pd.read_csv('%s_xeval.csv' % (filecore))
-    yEval = pd.read_csv('%s_yeval.csv' % (filecore))
-    scalingDict, targets, inputcols = pickle.load(open('%s_scalingdict.bin' % (filecore), 'rb'))
+#     xEval = pd.read_csv('%s_xeval.csv' % (filecore))
+#     yEval = pd.read_csv('%s_yeval.csv' % (filecore))
+#     scalingDict, targets, inputcols = pickle.load(open('%s_scalingdict.bin' % (filecore), 'rb'))
 
-    print(xEval)
+#     print(xEval)
 
-    print(scalingDict)
-    print(targets)
+#     print(scalingDict)
+#     print(targets)
 
-    return xEval, yEval, scalingDict, targets, inputcols
+#     return xEval, yEval, scalingDict, targets, inputcols
 
 
 def convert_categorial_to_numeric(data, cols):
@@ -418,39 +419,20 @@ def convert_categorial_to_numeric(data, cols):
     return data
 
 
-def normalize_elevation(data, cols, colstr='elevation', scalingDict={}, maxelev=9000, minelev=-11000):
+def normalize_elevation(data, cols, colstr='elevation', scalingDict={}, 
+        maxelev=9000, minelev=-11000):
 
     if len(cols) == 0:
         return data, scalingDict
 
-    # ndata = data[cols]
-    maxs = data[cols].max(axis=1)
-    mins = data[cols].min(axis=1)
-
-    # print(maxs)
-    # print(mins)
-
     for c in cols:
-        if ('_max' in c) or ('_min' in c):
-            continue
+        data[c] = (data[c] - minelev) / (maxelev - minelev)
 
-        data[c] = (data[c] - mins) / (maxs - mins)
+        if '%s' % c not in scalingDict:
+            scalingDict['%s' % c] = {}
 
-        data.loc[data[c].isnull(), c] = 0
-
-    data['%s_max' % colstr] = (maxs - minelev) / (maxelev - minelev)
-    data['%s_min' % colstr] = (mins - minelev) / (maxelev - minelev)
-
-    if '%s_min' % colstr not in scalingDict:
-        scalingDict['%s_min' % colstr] = {}
-
-    if '%s_max' % colstr not in scalingDict:
-        scalingDict['%s_max' % colstr] = {}
-
-    scalingDict['%s_min' % colstr]['min'] = minelev
-    scalingDict['%s_min' % colstr]['max'] = maxelev
-    scalingDict['%s_max' % colstr]['min'] = minelev
-    scalingDict['%s_max' % colstr]['max'] = maxelev
+        scalingDict['%s' % c]['min'] = minelev
+        scalingDict['%s' % c]['max'] = maxelev
 
     return data, scalingDict
 

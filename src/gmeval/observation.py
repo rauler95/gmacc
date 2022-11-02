@@ -203,6 +203,16 @@ class StationContainerObservation(StationContainer):
                 if comp not in cmpList:
                     del self.stations[sta].components[comp]
 
+    def remove_zero_traces(self):
+        # src = self.refSource
+        for sta in self.stations:
+            comps = list(self.stations[sta].components.keys())
+            for comp in comps:
+                tr = self.stations[sta].components[comp].trace
+                diffT = tr.ydata.max() - tr.ydata.min()
+                if diffT == 0.0:
+                    del self.stations[sta].components[comp]
+
     def remove_short_traces(self, mint):
         # src = self.refSource
         for sta in self.stations:
@@ -1028,6 +1038,7 @@ def get_observation_container(source, wvData, locationDict, mapextent,
         % (len(stationCont.stations)))
 
     stationCont.remove_short_traces(mint=20.)
+    stationCont.remove_zero_traces()
     stationCont.remove_notneeded_components(pyrockoChas)
     stationCont.remove_stations_without_components(pyrockoChas)
 
@@ -1042,10 +1053,6 @@ def get_observation_container(source, wvData, locationDict, mapextent,
     stationCont.modify_waveform(quality_check=True)
     stationCont.create_all_waveforms()
     stationCont.cut_waveforms()
-    if savepath:
-        stationCont.save_waveform(savepath=savepath + '_disp', mode='disp')
-        stationCont.save_waveform(savepath=savepath + '_vel', mode='vel')
-        stationCont.save_waveform(savepath=savepath + '_acc', mode='acc')
 
     # if 'pgd' in imts or 'pgv' in imts:
         # stationCont.remove_tilted_waveforms()
@@ -1061,6 +1068,12 @@ def get_observation_container(source, wvData, locationDict, mapextent,
         stationCont.modify_disp_trace(mode=tilt_correction, plot=False)
     stationCont.resample_waveform(resample_f=resample_f)
     stationCont.filter_waveform(freqs=filterfreq)
+
+    if savepath:
+        stationCont.save_waveform(savepath=savepath + '_disp', mode='disp')
+        stationCont.save_waveform(savepath=savepath + '_vel', mode='vel')
+        stationCont.save_waveform(savepath=savepath + '_acc', mode='acc')
+
     stationCont.get_gm_from_wv(imts=imts, freqs=freqs,
             H2=H2, delete=False, deleteWvData=deleteWvData)
 
@@ -1236,10 +1249,12 @@ def convert_surface(source, surface):
 ###
 def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=None,
                         H2=True, delete=False, deleteWvData=False, resample_f=None,
-                        gfpath='/home/lehmann/dr/pyrocko_gf/own_2hz_distant/',
+                        gfpath='/home/lehmann/dr/pyrocko_gf/own_2hz_dist_b/',
+                        rupture_duration_mode='uncertain',
                         savepath=None, timecut=False, only_waveform=False):
-
-    stf = get_stf_with_duration(source)
+    
+    print('GF-Path:', gfpath, '\n')
+    stf = get_stf_with_duration(source, rupture_duration_mode=rupture_duration_mode)
 
     t1 = time.time()
     synthTraces, targets = create_synthetic_waveform(
@@ -1251,7 +1266,7 @@ def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=N
     synthStaDict = create_stationdict_synthetic(synthTraces, targets)
     pyrockoCont = StationContainerObservation(refSource=source, stations=synthStaDict)
 
-    if savepath:
+    if savepath and only_waveform:
         pyrockoCont.save_waveform(savepath=savepath)
 
     if not only_waveform:
@@ -1266,6 +1281,9 @@ def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=N
             print('RS-Time', time.time() - t1)
 
         pyrockoCont.filter_waveform(freqs=filterfreq)
+
+        if savepath:
+            pyrockoCont.save_waveform(savepath=savepath)
 
         t1 = time.time()
         pyrockoCont.get_gm_from_wv(imts=imts, freqs=freqs,
@@ -1562,7 +1580,7 @@ def calc_rise_time(source=None, mag=None, fac=0.8):
     return riseTime
 
 
-def get_stf_with_duration(source):
+def get_stf_with_duration(source, rupture_duration_mode='uncertain'):
 
     if hasattr(source, 'stf') and source.form == 'point' and source.stf:
         sstf = source.stf
@@ -1581,7 +1599,7 @@ def get_stf_with_duration(source):
 
     else:
         if source.form == 'point':
-            risetime = calc_rupture_duration(source, mode='uncertain')
+            risetime = calc_rupture_duration(source, mode=rupture_duration_mode)
             # print('RuptureDuration:', risetime)
             source.duration_type = 'calculated'
         else:
@@ -2238,9 +2256,9 @@ def get_tilt_point(accZ, accE, accN, sta=None, eq=None, dist=None, plot=True, mo
         if os.path.exists(plotdir):
             pass
         else:
-            os.mkdir(plotdir)
+            os.makedirs(plotdir)
 
-        print('Plot Tilt point')
+        print('Plot Tilt point', sta)
         f, axes = plt.subplots(6, 1, sharex=True, figsize=(16, 9))
 
         tmin = accN.tmin
@@ -2298,7 +2316,12 @@ def get_tilt_point(accZ, accE, accN, sta=None, eq=None, dist=None, plot=True, mo
     if mode == 'all':
         tiltmaxlist = [Enemax, jEnemax, sEnemax]
         tiltmaxlist = [i for i in tiltmaxlist if i > (accZ.tmin + 5 * accZ.deltat)]
+        # print(tiltmaxlist)
+        # try:
         tilttime = min(tiltmaxlist)
+        # except ValueError as e:
+        #     print('ValueError:', e)
+        #     tilttime = None
 
     # print(mode, tilttime)
     # print(indvtime, jindvtime, sindvtime, Enemax, jEnemax, sEnemax)

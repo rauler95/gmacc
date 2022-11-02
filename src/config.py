@@ -326,6 +326,11 @@ class ObservationalData(GroundMotionData):
         optional=True,
         help='List of two numbers which define the map size in degree around the hypocenter.')
 
+    delete_EN = Bool.T(
+        optional=True,
+        default=False,
+        help='Bool to delete E and N component, useful if only the H component is of interest.')
+
     ####
 
     datadir = String.T(

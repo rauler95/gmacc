@@ -191,6 +191,9 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
     elif mapping == 'circular':
         mapCoords = GMu.circular_mapping(source, mapextent,
                                         ncords, rmin=0.1)
+    elif mapping == 'random_circular':
+        mapCoords = GMu.random_circular_mapping(source,
+            mapextent=mapextent, ncoords=ncords, log=True)
     else:
         print('Wrong mapping: %s' % (mapping))
         exit()
