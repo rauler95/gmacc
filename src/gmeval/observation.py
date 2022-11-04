@@ -1266,7 +1266,7 @@ def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=N
     synthStaDict = create_stationdict_synthetic(synthTraces, targets)
     pyrockoCont = StationContainerObservation(refSource=source, stations=synthStaDict)
 
-    if savepath and only_waveform:
+    if savepath:
         pyrockoCont.save_waveform(savepath=savepath)
 
     if not only_waveform:
@@ -1281,9 +1281,6 @@ def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=N
             print('RS-Time', time.time() - t1)
 
         pyrockoCont.filter_waveform(freqs=filterfreq)
-
-        if savepath:
-            pyrockoCont.save_waveform(savepath=savepath)
 
         t1 = time.time()
         pyrockoCont.get_gm_from_wv(imts=imts, freqs=freqs,
