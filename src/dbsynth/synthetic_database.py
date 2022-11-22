@@ -155,9 +155,6 @@ def create_random_source(sourcemode, ii):
                             decimation_factor=1,
                             magnitude=mag)
         src.validate()
-        print(src)
-        cp = src.outline(cs='latlondepth')
-        print(cp)
         source = GMs.from_rectsource_to_own_source(src)
         source.create_rupture_surface()
     else:
