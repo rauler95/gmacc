@@ -155,7 +155,7 @@ def create_random_source(sourcemode, ii):
                             decimation_factor=1,
                             magnitude=mag)
         src.validate()
-        print(source)
+        print(src)
         source = GMs.from_rectsource_to_own_source(src)
         source.create_rupture_surface()
     else:
