@@ -89,7 +89,6 @@ def create_random_source(sourcemode, ii):
     # # DC = DC.random_dc()
     # (s1, d1, r1), (s2, d2, r2) = DC.both_strike_dip_rake()
 
-
     #
     (strike, dip, rake) = pmt.random_strike_dip_rake()
 
@@ -293,8 +292,8 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
     if args.sourcemode == 'RS':
         resultDictraw['width'] = '%0.3f' % source.width
         resultDictraw['length'] = '%0.3f' % source.length
-        resultDictraw['nucleation_x'] = '%0.3f' % source.nucleation_x
-        resultDictraw['nucleation_y'] = '%0.3f' % source.nucleation_y
+        resultDictraw['nucleation_x'] = '%0.3f' % num.round(source.nucleation_x, 4)
+        resultDictraw['nucleation_y'] = '%0.3f' % num.round(source.nucleation_y, 4)
     
     for ns, station in staContainer.stations.items():
         resultDict = resultDictraw.copy()
