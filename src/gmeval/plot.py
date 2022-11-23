@@ -43,7 +43,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 markersize=200., reslevel=None,
                 predPlotMode='area', smoothfac=False, alpha=1,
                 showcbar=True, shmLevels=None,
-                minmax=False, plotgmvise=False, plotindi=False):
+                minmax=False, plotgmvise=False, plotindi=False,
+                valmode='log'):
 
     source = predCont.refSource
     # print(predCont)
@@ -130,6 +131,12 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             lons = num.array(lons)
             lats = num.array(lats)
             data = num.array(vals['vals'])
+
+            if valmode == 'log':
+                continue
+            elif valmode in ['abs', 'true']:
+                data = 10**data
+
             if type(data) == float:
                 print('Data type is float')
                 continue
@@ -403,6 +410,10 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 obsLon = obsDict[gm][obsComp]['lons']
                 obsLat = obsDict[gm][obsComp]['lats']
                 obsData = num.array(obsDict[gm][obsComp]['vals'])
+                if valmode == 'log':
+                    continue
+                elif valmode in ['abs', 'true']:
+                    obsData = 10**obsData
 
                 if resCont:
                     '''
@@ -422,6 +433,10 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         ticks = reslevel
 
                     resData = num.array(resDict[gm][comp]['vals'])
+                    if valmode == 'log':
+                        continue
+                    elif valmode in ['abs', 'true']:
+                        resData = 10**resData
                     residuum = resData - obsData
                     refx, refy = m(obsLon, obsLat)
 
