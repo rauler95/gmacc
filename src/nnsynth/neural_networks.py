@@ -873,8 +873,7 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
 
             if plotmode == 'box':
                 boxplot(diffs, positions, pltcols, xlabel=col,
-                    outdir=outdir, fileprefix='%s_%s_' % (target, col),
-                    ymin=-0.2, ymax=0.2, axhline=0)
+                    outdir=outdir, fileprefix='%s_%s_' % (target, col))
             elif plotmode == 'violin':
                 violinplot(diffs, positions, pltcols, xlabel=col,
                     outdir=outdir, fileprefix='%s_%s_' % (target, col), 
