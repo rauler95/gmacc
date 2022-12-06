@@ -500,14 +500,14 @@ def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=
 
     # coords = GMu.rectangular_mapping(source, mapextent, incoords)
     coords = quasirandom_mapping(source, mapextent, incoords, rmax=max(mapextent) * GMs.deg)
-    # coords = GMu.circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
-    # coords = GMu.random_circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+    # coords = GMu.circular_mapping(source, mapextent, incoords, log=log, rmin=0.001)
+    # coords = GMu.random_circular_mapping(source, mapextent, incoords, log=log, rmin=0.001)
 
     lons, lats = coords.T
 
     dists = GMs.get_distances(lons, lats, source, distType=distType)
 
-    if distlog is True:
+    if log is True:
         dists = num.log10(dists)
     else:
         pass
@@ -621,8 +621,8 @@ def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=
 
     # coords = GMu.rectangular_mapping(source, mapextent, incoords)
     # coords = GMu.quasirandom_mapping(source, mapextent, incoords)
-    # coords = GMu.circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
-    coords = random_circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+    # coords = GMu.circular_mapping(source, mapextent, incoords, log=log, rmin=0.001)
+    coords = random_circular_mapping(source, mapextent, incoords, log=log, rmin=0.001)
 
     lons, lats = coords.T
 
@@ -634,7 +634,7 @@ def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=
     else:
         azis = dists
 
-    if distlog is True:
+    if log is True:
         dists = num.log10(dists)
     else:
         pass
