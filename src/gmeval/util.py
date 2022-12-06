@@ -479,10 +479,10 @@ def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=Fal
 
     if source.form == 'point':
         coords = downsampling_MT_mapping(source, mapextent=mapextent,
-            ncoords=ncoords, rmin=rmin, distlog=distlog)
+            ncoords=ncoords, rmin=rmin, log=log)
     else:
         coords = downsampling_RS_mapping(source, mapextent=mapextent,
-            ncoords=ncoords, rmin=rmin, distlog=distlog)
+            ncoords=ncoords, rmin=rmin, log=log)
 
     return coords
 
