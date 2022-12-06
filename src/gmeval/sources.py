@@ -990,7 +990,10 @@ def get_distances(lons, lats, source, distType='hypo'):
 
     hypoLat = source.lat
     hypoLon = source.lon
-    hypoDepth = source.depth / 1000.
+    if hasattr(source, 'form'):
+        hypoDepth = source.depth
+    else:
+        hypoDepth = source.depth / 1000.
 
     dists = []
     points = []

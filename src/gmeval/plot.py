@@ -133,13 +133,16 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             data = num.array(vals['vals'])
 
             if valmode == 'log':
-                continue
+                pass
             elif valmode in ['abs', 'true']:
                 data = 10**data
+            else:
+                print('Wrong valmode:', valmode)
 
             if type(data) == float:
                 print('Data type is float')
-                continue
+                print('Error')
+                exit()
 
             if shmLevels is not None and minmax is not True:
                 pass
@@ -199,7 +202,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             m = basemap.Basemap(projection='gall', ax=ax,
                                 llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
                                 llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
-                                resolution='l', epsg=3857)  # 1 - 4326, 2 - 3857
+                                resolution='h', epsg=3857)  # 1 - 4326, 2 - 3857
             try:
                 m.drawcoastlines()
             except ValueError as e:
@@ -282,7 +285,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 mt = pmt.MomentTensor(strike=source.strike, dip=source.dip,
                                 rake=source.rake)
 
-            if source.form in ['rectangular', 'pdr']:
+            if source.form in ['rectangular', 'pdr'] or valmode in ['abs', 'true']:
                 # subax = plt.axes([0., 0., 0.2, 0.2], facecolor='y')
                 subax = ax.inset_axes([0., 0., 0.2, 0.2], facecolor='None',
                             zorder=300)
@@ -294,7 +297,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 subax.axis('off')
                 beachball.plot_beachball_mpl(mt, subax,
                                             position=(0.5, 0.5),
-                                            size=50,
+                                            size=20,
                                             zorder=300,
                                             color_t='black')
             else:
@@ -302,7 +305,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                                             position=(xEvt, yEvt),
                                             color_t='black',
                                             zorder=300,
-                                            size=40.)
+                                            size=20)
 
             '''
             Plotting predicted data
@@ -411,7 +414,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 obsLat = obsDict[gm][obsComp]['lats']
                 obsData = num.array(obsDict[gm][obsComp]['vals'])
                 if valmode == 'log':
-                    continue
+                    pass
                 elif valmode in ['abs', 'true']:
                     obsData = 10**obsData
 
@@ -434,11 +437,50 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
                     resData = num.array(resDict[gm][comp]['vals'])
                     if valmode == 'log':
-                        continue
+                        pass
                     elif valmode in ['abs', 'true']:
                         resData = 10**resData
+
                     residuum = resData - obsData
                     refx, refy = m(obsLon, obsLat)
+
+                    if valmode in ['abs', 'true']:
+                        absres = max(abs(residuum))
+                        reslevel = num.linspace(-absres, absres, 21)
+                        ticks = reslevel
+
+                        if gm == 'pga':
+                            label = '% g'
+                        elif gm == 'pgv':
+                            label = 'cm/s'
+                        elif gm == 'pgd':
+                            label = 'cm'
+                        elif gm == 'sigdur':
+                            label = 's'
+                        elif gm == 'ai':
+                            label = 'cm/s'
+                        elif ':' in gm:
+                            label = 'Ratio'
+                        else:
+                            label = 'UKN'
+
+                        label = 'Difference ' + label
+                    else:
+                        if gm == 'pga':
+                            label = '% g in log10'
+                        elif gm == 'pgv':
+                            label = 'cm/s in log10'
+                        elif gm == 'pgd':
+                            label = 'cm in log10'
+                        elif gm == 'sigdur':
+                            label = 's'
+                        elif gm == 'ai':
+                            label = 'cm/s in log10'
+                        elif ':' in gm:
+                            label = 'Log(Ratio)'
+                        else:
+                            label = 'UKN'
+                        label = 'Difference ' + label
 
                     if predPlotMode in ['resArea']:
                         residuum = num.nan_to_num(residuum)
@@ -463,7 +505,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
                         if n == 0 and showcbar:
                             owncolorbar(sc, fig=fig, ax=ax,
-                                        label='Difference [log10]',
+                                        label=label,
                                         ticks=ticks,
                                         side='right')
 
@@ -564,7 +606,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
 
 def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
-            savename='gm_diagram', figtitle=None,
+            savename='gm_diagram', figtitle=None, valmode='log',
             plotgmvise=False, plotindi=False):
     source = resCont.refSource
 
@@ -686,19 +728,25 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             obsLons = obsDict[gm][obsComp]['lons']
             obsLats = obsDict[gm][obsComp]['lats']
             obsData = num.array(obsDict[gm][obsComp]['vals'])
+            
+            if valmode == 'log':
+                pass
+            elif valmode in ['abs', 'true']:
+                data = 10**data
+                obsData = 10**obsData
 
             if mode in ['dist', 'distance']:
                 '''
                 Distance
                 '''
-                ydata = GMs.get_distances(lons, lats, source, distType=distType)
-                ydataRef = GMs.get_distances(obsLons, obsLats, source, distType=distType)
-                ydata[ydata <= 0.] = 0.1
-                ydataRef[ydataRef <= 0.] = 0.1
+                xdata = GMs.get_distances(lons, lats, source, distType=distType)
+                xdataRef = GMs.get_distances(obsLons, obsLats, source, distType=distType)
+                xdata[xdata <= 0.] = 0.1
+                xdataRef[xdataRef <= 0.] = 0.1
                 ax1.set_xscale('log')
                 ax2.set_xscale('log')
-                mindata = min(ydata) * 0.9
-                maxdata = max(ydata) * 1.1
+                mindata = min(xdata) * 0.9
+                maxdata = max(xdata) * 1.1
                 ax1.set_xlim(mindata, maxdata)
                 ax1.set_xticklabels([])
                 ax2.set_xlim(mindata, maxdata)
@@ -710,8 +758,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 '''
                 Azimuth
                 '''
-                ydata = GMs.get_azimuths(lons, lats, source, aziType=aziType)
-                ydataRef = GMs.get_azimuths(obsLons, obsLats, source, aziType=aziType)
+                xdata = GMs.get_azimuths(lons, lats, source, aziType=aziType)
+                xdataRef = GMs.get_azimuths(obsLons, obsLats, source, aziType=aziType)
                 mindata = -180.
                 maxdata = 180.
                 ax1.set_xlim((mindata, maxdata))
@@ -726,30 +774,48 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 exit()
 
             if n == 0:
-                if gm == 'pga':
-                    label = '% g in log10'
-                elif gm == 'pgv':
-                    label = 'cm/s in log10'
-                elif gm == 'pgd':
-                    label = 'cm in log10'
-                elif gm == 'sigdur':
-                    label = 's'
-                elif gm == 'ai':
-                    label = 'cm/s in log10'
-                elif ':' in gm:
-                    label = 'Log(Ratio)'
+                if valmode == 'log':
+                    if gm == 'pga':
+                        label = '% g in log10'
+                    elif gm == 'pgv':
+                        label = 'cm/s in log10'
+                    elif gm == 'pgd':
+                        label = 'cm in log10'
+                    elif gm == 'sigdur':
+                        label = 's'
+                    elif gm == 'ai':
+                        label = 'cm/s in log10'
+                    elif ':' in gm:
+                        label = 'Log(Ratio)'
+                    else:
+                        label = 'UKN'
+                    ax1.set_ylabel('%s [%s]' % (str(gm).upper(), label))
+                    ax2.set_ylabel('Difference [log10]', color=ax2color)
                 else:
-                    label = 'UKN'
-                ax1.set_ylabel('%s [%s]' % (str(gm).upper(), label))
-                ax2.set_ylabel('Difference [log10]', color=ax2color)
+                    if gm == 'pga':
+                        label = '% g'
+                    elif gm == 'pgv':
+                        label = 'cm/s'
+                    elif gm == 'pgd':
+                        label = 'cm'
+                    elif gm == 'sigdur':
+                        label = 's'
+                    elif gm == 'ai':
+                        label = 'cm/s'
+                    elif ':' in gm:
+                        label = 'Ratio'
+                    else:
+                        label = 'UKN'
+                    ax1.set_ylabel('%s [%s]' % (str(gm).upper(), label))
+                    ax2.set_ylabel('Difference', color=ax2color)
 
             '''
             Plotting
             '''
             ## Primary plot, e.g. Azimuth or distance
-            ax1.plot(ydata, data, marker=ax1marker, color=ax1color,
+            ax1.plot(xdata, data, marker=ax1marker, color=ax1color,
                 linestyle='None', label='Predicted')
-            ax1.plot(ydataRef, obsData, marker=obsmarker, color=obscolor,
+            ax1.plot(xdataRef, obsData, marker=obsmarker, color=obscolor,
                 linestyle='None', label='Observed', fillstyle='none')
 
             ax1.set_xticklabels([])
@@ -762,19 +828,25 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             #     ax1.plot([ydata[nn], ydata[nn]],
             #             [obsData[nn], data[nn]], ':', zorder=-100, linewidth=0.5,
             #             color=color)
-            ax1.set_ylim((valMin - num.log10(2.), valMax + num.log10(5.)))
+            if valmode == 'log':
+                ax1.set_ylim((valMin - num.log10(2.), valMax + num.log10(5.)))
+            else:
+                pass
+                # ax1.set_ylim((10**valMin, 10**valMax + num.log10(5.)))
 
             ## Secondary plot, residual
             residuum = data - obsData
             nn_mean = num.mean(residuum)
             nn_std = num.std(residuum)
-            ax2.plot(ydata, residuum, marker=ax2marker, color=ax2color,
+            ax2.plot(xdata, residuum, marker=ax2marker, color=ax2color,
                 linestyle='None')#, label='log10-Res')
 
-            gmpe_std = 0.3
-            gmpep = ax2.fill_between(num.linspace(mindata, maxdata),
-                gmpe_std, -gmpe_std, color='grey',
-                alpha=0.3, label='μ=0; σ=%.1f' % gmpe_std)
+            if valmode == 'log':
+               
+                gmpe_std = 0.3
+                gmpep = ax2.fill_between(num.linspace(mindata, maxdata),
+                    gmpe_std, -gmpe_std, color='grey',
+                    alpha=0.3, label='μ=0; σ=%.1f' % gmpe_std)
 
             mup = ax2.plot((mindata, maxdata), (nn_mean, nn_mean),
                 color='black', marker='+', linestyle='--', label='μ-PWS', zorder=-2)
@@ -789,6 +861,9 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             ax2.tick_params(which='both', direction='in', bottom=True, top=True,
                             left=True, right=True)
 
+            # else:
+            #     mup = ax2.plot((mindata, maxdata), (0, 0),
+            #         color='black', linestyle='--', zorder=-2)
             # maxval = num.ceil((max(ydata) / 10.)) * 10.
             # minval = num.floor((min(ydata) / 10.)) * 10.
             # # print(minval, maxval)
@@ -817,7 +892,14 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             # dummyX = num.linspace(min(ydata), max(ydata))
             # ax2.plot(dummyX, poly1d_fn(dummyX), '--', color=ax2color)
 
-            ax2.set_ylim((min(-1.1, min(residuum)), max(1.1, max(residuum))))
+            if valmode == 'log':
+                tmpmax = max(1.1, max(residuum))
+                tmpmin = min(-1.1, min(residuum))
+            elif valmode in ['abs', 'true']:
+                tmpmax = 1.1 * max(abs(residuum))
+                tmpmin = -tmpmax
+
+            ax2.set_ylim((tmpmin, tmpmax))
             # ax2.axhline(y=0, color=ax2color, linestyle=':', alpha=0.3)
             # ax2.axhline(y=1, color=ax2color, linestyle=':', alpha=0.3)
             # ax2.axhline(y=-1, color=ax2color, linestyle=':', alpha=0.3)
@@ -870,8 +952,8 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 l2 = plt.Line2D([x0, y0 + width], [0.25 * height, 0.25 * height],
                     linestyle=orig_handle[3], color=orig_handle[2])
                 return [l1, l2]
-
-        ax2.legend([(mup[0].get_color(), mup[0].get_linestyle(),
+        if valmode == 'log':        
+            ax2.legend([(mup[0].get_color(), mup[0].get_linestyle(),
                     sigmap[0].get_color(), sigmap[0].get_linestyle()),
                     gmpep], ['PWS μ, σ', 'μ=0; σ=0.3'],
                 loc='upper left',

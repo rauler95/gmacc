@@ -13,7 +13,7 @@ import tensorflow as tf
 from gmacc.nnsynth import preprocessing as GMpre
 
 import gmacc.gmeval.sources as GMs
-
+import gmacc.gmeval.util as GMu
 #####################
 ### Model generation
 #####################
@@ -540,50 +540,78 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
 
     lons, lats = num.array(coords).T
 
-    data = {}
-    for params in scalingDict.keys():
-        if params == 'ev_depth':
-            data[params] = [source['depth']] * len(coords)
-        elif params == 'azistrike':
-            data['azimuth'] = source.calc_azimuth(lons=lons, lats=lats)
-            data['strike'] = [source.strike] * len(coords)
-        elif params == 'rup_azimuth':
-            rupazi, centazi = source.calc_rupture_azimuth(lons=lons, lats=lats)
-            data['rup_azimuth'] = rupazi
-            data['centre_azimuth'] = centazi
+    r_hypos = source.calc_distance(lons=lons, lats=lats, distType='rhypo')
+    rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
+    azis = source.calc_azimuth(lons=lons, lats=lats)
+    rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
 
-        elif params in ['rhypo', 'rrup', 'ry0', 'rx', 'rjb']:
-            data[params] = source.calc_distance(lons=lons, lats=lats, distType=params)
+    data = setup_dataframe(source, scalingDict, inputcols,
+                    azis, r_hypos, rrups, rupazis, lenfac=len(coords))
 
-        elif params in ['src_duration']:
-            data[params] = [source.duration] * len(coords)
-        else:
-            if params == 'moment':
-                continue
-            try:
-                data[params] = [source[params]] * len(coords)
-            except KeyError as e:
-                print('Error', e)
+    # data = {}
+    # for params in scalingDict.keys():
+    #     if params == 'ev_depth':
+    #         data[params] = [source['depth']] * len(coords)
+    #     elif params == 'azistrike':
+    #         data['azimuth'] = source.calc_azimuth(lons=lons, lats=lats)
+    #         data['strike'] = [source.strike] * len(coords)
 
-    data = pd.DataFrame(data)
-    data = GMpre.calc_azistrike(data)
-    data = GMpre.convert_distances(data)
+    #     elif params in 'rup_azistrike':
+    #         rupazi, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
+    #         data['rup_azimuth'] = rupazi
+    #         # data['centre_azimuth'] = centazi
 
-    if 'moment' in scalingDict:
-        data = GMpre.convert_magnitude_to_moment(data)
+    #     # elif params in 'rup_azimuth':
+    #     #     rupazi, centazi = source.calc_rupture_azimuth(lons=lons, lats=lats)
+    #     #     data['rup_azimuth'] = rupazi
+    #     #     data['centre_azimuth'] = centazi
 
-    data = GMpre.scale(scalingDict, data, mode='forward')
+    #     elif params in ['rhypo', 'rrup', 'ry0', 'rx', 'rjb']:
+    #         data[params] = source.calc_distance(lons=lons, lats=lats, distType=params)
 
-    # rearranging the columns, otherwise the NN does not work properly
-    # there should be a fix for that to be sure when this is really correct !!!
-    # cols = [col for col in scalingDict.keys() if col in data.columns]
-    if inputcols is not None:
-        # cols = [col for col in inputcols if col in data.columns]
-        cols = inputcols
-    else:
-        cols = [col for col in scalingDict.keys() if col in data.columns]
-    data = data[cols]
-    print(data.columns)
+    #     elif params in ['src_duration']:
+    #         data[params] = [source.duration] * len(coords)
+    #     else:
+    #         if params == 'moment':
+    #             continue
+    #         try:
+    #             data[params] = [source[params]] * len(coords)
+    #         except KeyError as e:
+    #             print('Error', e)
+
+    # data = pd.DataFrame(data)
+    # print(data)
+    # # data = GMpre.calc_azistrike(data)
+
+    # data = GMpre.calc_azistrike(data, strikecol='strike',
+    #     azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
+    # dropcols = ['azimuth', 'strike']
+
+    # if 'rup_azimuth' in data:
+    #     data = GMpre.calc_azistrike(data, strikecol='strike',
+    #         azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
+    #     dropcols.append('rup_azimuth')
+    # data = data.drop(columns=dropcols)
+
+    # data = GMpre.convert_distances(data)
+
+    # if 'moment' in scalingDict:
+    #     data = GMpre.convert_magnitude_to_moment(data)
+
+    # data = GMpre.scale(scalingDict, data, mode='forward')
+
+    # print(data)
+
+    # # rearranging the columns, otherwise the NN does not work properly
+    # # there should be a fix for that to be sure when this is really correct !!!
+    # # cols = [col for col in scalingDict.keys() if col in data.columns]
+    # if inputcols is not None:
+    #     # cols = [col for col in inputcols if col in data.columns]
+    #     cols = inputcols
+    # else:
+    #     cols = [col for col in scalingDict.keys() if col in data.columns]
+    # data = data[cols]
+    # print(data.columns)
 
     return data
 
@@ -601,6 +629,7 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
 
     data = prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords)
 
+    print(source)
     print()
     print(data)
     print()
@@ -667,6 +696,205 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
 
     return NNCont
 
+
+###
+# Predicting based on source
+###
+
+
+def setup_dataframe(src, scaling_dict, inputcols,
+                    azis, r_hypos, rrups, rupazis, lenfac):
+    data = {}
+    for params in scaling_dict.keys():
+        if params == 'azistrike':
+            data['azimuth'] = azis
+            data['strike'] = [float(src.strike)] * lenfac
+
+        if params == 'rhypo':
+            data[params] = r_hypos
+
+        if params == 'src_duration':
+            data[params] = [float(src.duration)] * lenfac
+            # except AttributeError:
+            #     print(
+            #         'Source STF has no duration (Needs to be added).')
+            #     # dur = GMu.calc_rupture_duration(source=src, mode='uncertain')
+            #     dur = GMu.calc_rise_time(source=src)
+            #     print('Calculated STF duration of {} s'.format(dur))
+            #     data[params] = [float(dur)] * lenfac
+
+        if params == 'ev_depth':
+            data[params] = [float(src.depth)] * lenfac
+
+        if params == 'dip':
+            data[params] = [float(src.dip)] * lenfac
+
+        if params == 'rake':
+            data[params] = [float(src.rake)] * lenfac
+
+        if params == 'magnitude':
+            try:
+                data[params] = [float(src.magnitude)] * lenfac
+            except AttributeError:
+                data[params] = [float(src.moment_magnitude)] * lenfac
+
+        if params == 'length':
+            try:
+                data['length'] = [float(src.length)] * lenfac
+            except AttributeError:
+                raise AttributeError('Source has no length information')
+
+        if params == 'width':
+            try:
+                data['width'] = [float(src.width)] * lenfac
+            except AttributeError:
+                raise AttributeError('Source has no width information')
+
+        if params == 'nucleation_x':
+            try:
+                data['nucleation_x'] = [float(src.nucleation_x)] * lenfac
+                data['nucleation_y'] = [float(src.nucleation_y)] * lenfac
+            except AttributeError:
+                raise AttributeError('Source has no nucleation information')
+
+        if params == 'rrup':
+            data['rrup'] = rrups
+
+        if params == 'rup_azimuth' or params == 'rup_azistrike':
+            data['rup_azimuth'] = rupazis
+
+    data = pd.DataFrame(data)
+    # data = GMpre.calc_azistrike(data)
+    data = GMpre.calc_azistrike(data, strikecol='strike',
+        azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
+    dropcols = ['azimuth', 'strike']
+
+    if 'rup_azimuth' in data:
+        data = GMpre.calc_azistrike(data, strikecol='strike',
+            azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
+        dropcols.append('rup_azimuth')
+    data = data.drop(columns=dropcols)
+    data = GMpre.convert_distances(data)
+
+    data = GMpre.normalize(scaling_dict, data, mode='forward')
+
+    if inputcols is not None:
+        cols = inputcols
+    else:
+        cols = [col for col in scaling_dict.keys() if col in data.columns]
+    data = data[cols]
+
+    return data
+
+
+def dataframe_to_stadict(preddf, multicoords):
+
+    numstas = len(multicoords[0])
+    numevs = int(len(preddf) / numstas)
+    
+    targets = preddf.columns
+    chas = [t.rsplit('_')[0] for t in targets]
+    chas = list(set(chas))
+
+    gms = [t.rsplit('_')[1] for t in targets]
+    gms = list(set(gms))
+
+    staDicts = []
+    for ee in range(numevs):
+        coords = multicoords[ee]
+        lons, lats = coords.T
+        staDict = {}
+        for ss in range(numstas):
+            net = 'NN'
+            sta = ss
+
+            ns = '%s.%s' % (net, sta)
+
+            for cha in chas:
+                # cha = 'Z'  # needs to be adapted
+
+                COMP = GMs.ComponentGMClass(
+                    component=cha, gms={})
+
+                for gm in gms:
+                    GM = GMs.GMClass(
+                        name=gm,
+                        value=float(preddf.iloc[int(ee * numstas + ss)]),
+                        unit='UKN')
+                COMP.gms[GM.name] = GM
+
+                if ns not in staDict:
+                    STA = GMs.StationGMClass(
+                        network=net,
+                        station=sta,
+                        lat=float(lats[ss]),
+                        lon=float(lons[ss]),
+                        components={})
+
+                    STA.components[COMP.component] = COMP
+                    staDict['%s.%s' % (STA.network, STA.station)] = STA
+
+                else:
+                    staDict[ns].components[COMP.component] = COMP
+
+        staDicts.append(staDict)
+
+    return staDicts
+
+
+def get_NN_prediction_together(srcs, modelfile, suppfile, multicoords):
+    from pyrocko import moment_tensor as pmt
+
+    print(modelfile)
+    model = load_model(modelfile)
+    
+    scaling_dict, targets, inputcols = load_supportinfo(suppfile)
+
+    datas = []
+    # alldata = pd.DataFrame()
+
+    dabs_ref_time = time.time()
+    for coords, src in zip(multicoords, srcs):
+        # src.depth = src.depth * 1000.
+        lons, lats = num.array(coords).T
+        r_hypos = GMs.get_distances(lons, lats, src, distType='hypo')
+        azis = GMs.get_azimuths(lons, lats, src, aziType='hypo')
+
+        print(src)
+
+        if src.form == 'point':
+            rrups = None
+            rupazis = None
+
+        elif src.form == 'rectangular':
+
+            rrups = GMs.get_distances(lons, lats, src, distType='rrup')
+            rupazis = GMs.get_azimuths(lons, lats, src, aziType='rup')
+        else:
+            print('Wrong form: %s, not implemented yet.' % src.form)
+            exit()
+
+        lenfac = len(lons)
+        # src.depth = src.depth / 1000.
+        data = setup_dataframe(src, scaling_dict, inputcols,
+            azis, r_hypos, rrups, rupazis, lenfac)
+
+        # alldata = pd.concat([alldata, data], ignore_index=True)
+        datas.append(data)
+        # alldata.append(data)
+    alldata = pd.concat(datas, ignore_index=True)
+    print(alldata)
+    print('Finished data preparation: in %s s' % (time.time() - dabs_ref_time))
+
+    preddf = get_predict_df(model, alldata, targets, batchsize=10000)
+    preddf = GMpre.scale(scaling_dict, preddf, mode='inverse')
+    # print(alldata)
+
+    stadicts = dataframe_to_stadict(preddf, multicoords)
+    conts = []
+    for ss in range(len(srcs)):
+        conts.append(GMs.StationContainer(refSource=srcs[ss], stations=stadicts[ss]))
+    return conts
 
 #####################
 ### Misc

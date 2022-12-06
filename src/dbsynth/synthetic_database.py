@@ -75,26 +75,46 @@ def create(args):
         p.join()
 
 
-def create_random_source(sourcemode, ii):
+def create_random_source(sourcemode, ii=None, mag=None, lat=None, lon=None, 
+        depth=None, sdr=None):
 
-    num.random.seed(seed=ii)
+    if ii is not None:
+        num.random.seed(seed=ii)
 
-    mag = num.random.randint(5000, 7501) / 1000.
-    # strike = float(num.random.randint(0., 360.))
-    # dip = float(num.random.randint(1, 89))
-    # rake = float(num.random.randint(-180, 180))
-    
-    #
-    # DC = pmt.MomentTensor(m=pmt.random_dc())
-    # # DC = DC.random_dc()
-    # (s1, d1, r1), (s2, d2, r2) = DC.both_strike_dip_rake()
+    if mag is None:
+        mag = num.random.randint(5000, 7501) / 1000.
+    else:
+        mag = float(mag)
 
-    #
-    (strike, dip, rake) = pmt.random_strike_dip_rake()
+    if sdr is None:
+        (strike, dip, rake) = pmt.random_strike_dip_rake()
+        # strike = float(num.random.randint(0., 360.))
+        # dip = float(num.random.randint(1, 89))
+        # rake = float(num.random.randint(-180, 180))
+        #
+        # DC = pmt.MomentTensor(m=pmt.random_dc())
+        # # DC = DC.random_dc()
+        # (s1, d1, r1), (s2, d2, r2) = DC.both_strike_dip_rake()
+    else:
+        (strike, dip, rake) = sdr
+        strike = float(strike)
+        dip = float(dip)
+        rake = float(rake)
 
-    lat = num.random.uniform(-10., 10.)
-    lon = num.random.uniform(-10., 10.)
-    depth = num.random.uniform(0.1, 10.)
+    if lon is None:
+        lon = num.random.uniform(-10., 10.)
+    else:
+        lon = float(lon)
+
+    if lat is None:
+        lat = num.random.uniform(-10., 10.)
+    else:
+        lat = float(lat)
+
+    if depth is None:
+        depth = num.random.uniform(0.1, 10.)
+    else:
+        depth = float(depth)
 
     ## MT ##
     if sourcemode == 'MT':
@@ -161,10 +181,16 @@ def create_random_source(sourcemode, ii):
         print('Wrong mode')
         exit()
 
-    source.update(name='%s_%s' % (source.name, ii))
+    if ii is None:
+        source.update(name=source.name)
+    else:
+        source.update(name='%s_%s' % (source.name, ii))
     source.validate()
     # print(source)
     # exit()
+
+    if ii is not None:
+        num.random.seed()
 
     return source
 
@@ -192,6 +218,9 @@ def extract_gm(ii, args, mapextent, ncords, mapping):
                                         ncords, rmin=0.1)
     elif mapping == 'random_circular':
         mapCoords = GMu.random_circular_mapping(source,
+            mapextent=mapextent, ncoords=ncords, log=True)
+    elif mapping == 'downsampling':
+        mapCoords = GMu.downsampling_mapping(source,
             mapextent=mapextent, ncoords=ncords, log=True)
     else:
         print('Wrong mapping: %s' % (mapping))

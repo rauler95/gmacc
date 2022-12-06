@@ -4,6 +4,8 @@ import random
 from pyrocko import orthodrome
 from pyrocko import moment_tensor as pmt
 
+
+import gmacc.gmeval.sources as GMs
 #### 
 # Read in ensemble file
 ####
@@ -301,33 +303,44 @@ Mapping functions
 Create grid coordinates around the (Hypo)center of the given source.
 '''
 #############################
-def quasirandom_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
+def quasirandom_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf):
     import chaospy as cpy
 
+    ## initialize the random locations (have always the same position)
     lats, lons = cpy.create_halton_samples(ncoords**2, 2)
 
+    ## add a bit of randomness
     relfac = 0.01
     lons += num.random.uniform(-relfac * mapextent[0],
                                relfac * mapextent[0], len(lons))
     lats += num.random.uniform(-relfac * mapextent[1],
                                relfac * mapextent[1], len(lats))
 
-    lons = lons * 2 * mapextent[0] - mapextent[0] + source.lon
-    lats = lats * 2 * mapextent[1] - mapextent[1] + source.lat
+    if source.form == 'point':
+        sourcelat = source.lat
+        sourcelon = source.lon
+    else:
+        mpc = source.surface.get_middle_point()
+        sourcelat = mpc.latitude
+        sourcelon = mpc.longitude
+
+    ## locate within the boarders
+    lons = lons * 2 * mapextent[0] - mapextent[0] + sourcelon
+    lats = lats * 2 * mapextent[1] - mapextent[1] + sourcelat
 
     prefacLat = (2 * mapextent[1]) / (max(lats) - min(lats))
-    lats = (prefacLat * (lats - num.mean(lats))) + num.mean([source.lat - mapextent[1],
-                        source.lat + mapextent[1]])
+    lats = (prefacLat * (lats - num.mean(lats))) + num.mean([sourcelat - mapextent[1],
+                        sourcelat + mapextent[1]])
 
     prefacLon = (2 * mapextent[0]) / (max(lons) - min(lons))
-    lons = (prefacLon * (lons - num.mean(lons))) + num.mean([source.lon - mapextent[0],
-                        source.lon + mapextent[0]])
+    lons = (prefacLon * (lons - num.mean(lons))) + num.mean([sourcelon - mapextent[0],
+                        sourcelon + mapextent[0]])
 
     coords = []
     for lon, lat in zip(lons, lats):
         dist = orthodrome.distance_accurate50m_numpy(
-                            source.lat, source.lon, lat, lon) / 1000.
-        if abs(dist) > rmin:
+                            sourcelat, sourcelon, lat, lon) / 1000.
+        if abs(dist) > rmin and abs(dist) < rmax:
             coords.append([lon, lat])
         else:
             pass
@@ -336,18 +349,26 @@ def quasirandom_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
     return coords
 
 
-def random_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
+def random_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf):
     coords = []
 
-    lats = num.random.uniform(source.lat - mapextent[1],
-                        source.lat + mapextent[1], ncoords**2)
-    lons = num.random.uniform(source.lon - mapextent[0],
-                        source.lon + mapextent[0], ncoords**2)
+    if source.form == 'point':
+        sourcelat = source.lat
+        sourcelon = source.lon
+    else:
+        mpc = source.surface.get_middle_point()
+        sourcelat = mpc.latitude
+        sourcelon = mpc.longitude
+
+    lats = num.random.uniform(sourcelat - mapextent[1],
+                        sourcelat + mapextent[1], ncoords**2)
+    lons = num.random.uniform(sourcelon - mapextent[0],
+                        sourcelon + mapextent[0], ncoords**2)
 
     for lon, lat in zip(lons, lats):
         dist = orthodrome.distance_accurate50m_numpy(
-                            source.lat, source.lon, lat, lon) / 1000.
-        if abs(dist) > rmin:
+                            sourcelat, sourcelon, lat, lon) / 1000.
+        if abs(dist) > rmin and abs(dist) < rmax:
             coords.append([lon, lat])
         else:
             pass
@@ -356,19 +377,27 @@ def random_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
     return coords
 
 
-def rectangular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0):
+def rectangular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf):
     coords = []
 
-    lats = num.linspace(source.lat - mapextent[1],
-                        source.lat + mapextent[1], ncoords)
-    lons = num.linspace(source.lon - mapextent[0],
-                        source.lon + mapextent[0], ncoords)
+    if source.form == 'point':
+        sourcelat = source.lat
+        sourcelon = source.lon
+    else:
+        mpc = source.surface.get_middle_point()
+        sourcelat = mpc.latitude
+        sourcelon = mpc.longitude
+
+    lats = num.linspace(sourcelat - mapextent[1],
+                        sourcelat + mapextent[1], ncoords)
+    lons = num.linspace(sourcelon - mapextent[0],
+                        sourcelon + mapextent[0], ncoords)
 
     for lon in lons:
         for lat in lats:
             dist = orthodrome.distance_accurate50m_numpy(
-                                source.lat, source.lon, lat, lon) / 1000.
-            if abs(dist) > rmin:
+                                sourcelat, sourcelon, lat, lon) / 1000.
+            if abs(dist) > rmin and abs(dist) < rmax:
                 coords.append([lon, lat])
             else:
                 pass
@@ -388,9 +417,17 @@ def circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=True):
     theta = num.linspace(0, 2 * num.pi, int(ncoords * 1.25)) \
         + 2 * num.pi  # * random.random()
 
+    if source.form == 'point':
+        sourcelat = source.lat
+        sourcelon = source.lon
+    else:
+        mpc = source.surface.get_middle_point()
+        sourcelat = mpc.latitude
+        sourcelon = mpc.longitude
+
     R, Theta = num.meshgrid(r, theta)
-    lons = R * num.cos(Theta) + source.lon
-    lats = R * num.sin(Theta) + source.lat
+    lons = R * num.cos(Theta) + sourcelon
+    lats = R * num.sin(Theta) + sourcelat
 
     for lon, lat in zip(lons.flatten(), lats.flatten()):
         coords.append([lon, lat])
@@ -411,20 +448,308 @@ def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log
     theta = (num.linspace(0, 2 * num.pi, int(ncoords * 1.25)) 
         + random.random() * 2 * num.pi)
 
+    if source.form == 'point':
+        sourcelat = source.lat
+        sourcelon = source.lon
+    else:
+        mpc = source.surface.get_middle_point()
+        sourcelat = mpc.latitude
+        sourcelon = mpc.longitude
+
     R, Theta = num.meshgrid(r, theta)
 
     runc = 0.1
-    thataunc = 0.1
+    thetaunc = 0.1
     lons = (R * (1 + num.random.uniform(-runc, runc, R.shape))) \
-        * num.cos(Theta + num.random.uniform(-thataunc * num.pi, thataunc * num.pi, Theta.shape))\
-        + source.lon
+        * num.cos(Theta + num.random.uniform(-thetaunc * num.pi, thetaunc * num.pi, Theta.shape))\
+        + sourcelon
     lats = (R * (1 + num.random.uniform(-runc, runc, R.shape))) \
-        * num.sin(Theta + num.random.uniform(-thataunc * num.pi, thataunc * num.pi, Theta.shape)) \
-        + source.lat
+        * num.sin(Theta + num.random.uniform(-thetaunc * num.pi, thetaunc * num.pi, Theta.shape)) \
+        + sourcelat
 
     for lon, lat in zip(lons.flatten(), lats.flatten()):
         coords.append([lon, lat])
 
     coords = num.array(coords)
+
+    return coords
+
+
+def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, distlog=False):
+
+    if source.form == 'point':
+        coords = downsampling_MT_mapping(source, mapextent=mapextent,
+            ncoords=ncoords, rmin=rmin, distlog=distlog)
+    else:
+        coords = downsampling_RS_mapping(source, mapextent=mapextent,
+            ncoords=ncoords, rmin=rmin, distlog=distlog)
+
+    return coords
+
+
+def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, distlog=False):
+    # import matplotlib.pyplot as plt
+    coords = []
+
+    if source.form == 'point':
+        distType = 'hypo'
+    else:
+        distType = 'rrup'
+
+    incoords = ncoords * 5
+
+    # coords = GMu.rectangular_mapping(source, mapextent, incoords)
+    coords = quasirandom_mapping(source, mapextent, incoords, rmax=max(mapextent) * GMs.deg)
+    # coords = GMu.circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+    # coords = GMu.random_circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+
+    lons, lats = coords.T
+
+    dists = GMs.get_distances(lons, lats, source, distType=distType)
+
+    if distlog is True:
+        dists = num.log10(dists)
+    else:
+        pass
+
+    ### 2D
+    # numbins = int(num.ceil(ncoords / 2)) # 4 
+    # numbins = int(num.ceil(ncoords / 1.5)) # 3
+    numbins = int(ncoords / 2) # 1
+
+    distbins = num.linspace(min(dists), max(dists), numbins + 1)
+
+    # ndist, bsdist, _ = plt.hist(dists, bins=distbins)
+    ndist, bsdist = num.histogram(dists, bins=distbins)
+
+    # fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    # ndist, bsdist, _ = axs[0].hist(dists, bins=distbins)
+    # axs[0].set_xlabel('%s dist' % distType)
+    # axs[0].set_ylabel('#')
+    
+    # fig.savefig('/home/lehmann/dr/plots/grid_sampling_test_downsampling_before.png')
+    
+    ## calculate missnum, when maxperbin is not an interger, and therefore too
+    ## many samples would be produced
+    maxperbin = (ncoords ** 2 / numbins)
+    missnum = (maxperbin - int(num.floor(maxperbin))) * numbins
+    maxperbin = int(num.floor(maxperbin))
+    
+    mod = ndist - maxperbin
+
+    ## if there are bins without enough samples, those numbers missing will be
+    ## distributed on the other bins 
+    indxnotzeros = num.argwhere(mod > 0)
+    indxsmallerzeros = num.argwhere(mod <= 0)
+
+    for idxsz in indxsmallerzeros:
+        missnum -= mod[idxsz[0]]
+    missnum = int(abs(missnum))
+
+    ## that a bin that only has n more values than required is not accidentally
+    ## picked more than n-times
+    missnumcnt = 0
+    misspos = []
+    while missnum > indxnotzeros.shape[0]:
+        missnumcnt += 1
+        misspos += indxnotzeros.tolist()
+        missnum -= indxnotzeros.shape[0]
+        indxnotzeros = num.argwhere(mod > missnumcnt)
+    else:
+        missposidx = num.random.choice(indxnotzeros.shape[0], missnum, replace=False)
+        misspos += indxnotzeros[missposidx].tolist()
+
+    rmidxs = []
+    for idxrow in range(len(mod)):
+        rmnum = int(mod[idxrow])
+        if rmnum <= 0:
+            continue
+
+        if [idxrow] in misspos:
+            rmnum -= misspos.count([idxrow])
+
+        mincond = bsdist[idxrow]
+        maxcond = bsdist[idxrow + 1]
+        vals1 = dists
+
+        idxs = list(num.where(
+            ((vals1 > mincond) & (vals1 <= maxcond))))[0]
+
+        try:
+            rmidx = list(num.random.choice(idxs, rmnum, replace=False))
+        except ValueError as e:
+            print(e)
+            print(idxs)
+            print(len(idxs))
+            print(rmnum)
+            print(int(mod[idxrow]))
+            print(idxrow)
+            print('\nError can\'t be handled a the moment, chose different parameters')
+            exit()
+        rmidxs += rmidx
+
+    print(len(dists))
+    dists = num.delete(dists, rmidxs)
+    print(len(dists))
+
+    lats = num.delete(lats, rmidxs)
+    lons = num.delete(lons, rmidxs)
+
+    # fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    # ndist, bsdist, _ = axs[0].hist(dists, bins=distbins)
+    # axs[0].set_xlabel('%s dist' % distType)
+    # axs[0].set_ylabel('#')
+    # fig.savefig('/home/lehmann/dr/plots/grid_sampling_test_downsampling_after.png')
+
+    coords = num.array([lons, lats]).T
+    return coords
+
+
+def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, distlog=False):
+    coords = []
+
+    if source.form == 'point':
+        distType = 'hypo'
+        aziType = 'hypo'
+    else:
+        distType = 'rrup'
+        aziType = 'hypo'
+        # aziType = 'centre'
+        # aziType = 'rup'
+
+    incoords = ncoords * 5
+
+    # coords = GMu.rectangular_mapping(source, mapextent, incoords)
+    # coords = GMu.quasirandom_mapping(source, mapextent, incoords)
+    # coords = GMu.circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+    coords = random_circular_mapping(source, mapextent, incoords, log=distlog, rmin=0.001)
+
+    lons, lats = coords.T
+
+    dists = GMs.get_distances(lons, lats, source, distType=distType)
+    azis = GMs.get_azimuths(lons, lats, source, aziType=aziType)
+
+    if source.form == 'point':
+        pass
+    else:
+        azis = dists
+
+    if distlog is True:
+        dists = num.log10(dists)
+    else:
+        pass
+
+    ### 2D
+    # numbins = int(num.ceil(ncoords / 2)) # 4 
+    numbins = int(num.ceil(ncoords / 1.5)) # 3
+    # numbins = int(ncoords) # 1
+
+    distbins = num.linspace(min(dists), max(dists), numbins + 1)
+    azibins = num.linspace(-180, 180, numbins + 1)
+
+    n2d, bs1, bs2 = num.histogram2d(dists, azis, bins=(distbins, azibins))
+
+    # fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    # ndist, bsdist, _ = axs[0].hist(dists, bins=distbins)
+    # axs[0].set_xlabel('%s dist' % distType)
+    # axs[0].set_ylabel('#')
+    
+    # nazi, bsazi, _ = axs[1].hist(azis, bins=azibins)
+    # axs[1].set_xlabel('%s azi' % aziType)
+    # axs[1].set_ylabel('#')
+    
+    # n2d, bs1, bs2, cb = axs[2].hist2d(dists, azis, bins=(distbins, azibins))
+    # axs[2].set_xlabel('%s dist' % distType)
+    # axs[2].set_ylabel('%s azi' % aziType)
+    # fig.colorbar(cb, ax=axs[2])
+    # fig.savefig('/home/lehmann/dr/plots/grid_sampling_test_downsampling_before.png')
+
+    ## calculate missnum, when maxperbin is not an interger, and therefore too
+    ## many samples would be produced
+    maxperbin = (ncoords ** 2 / numbins ** 2)
+    missnum = (maxperbin - int(num.floor(maxperbin))) * numbins ** 2
+    maxperbin = int(num.floor(maxperbin))
+    mod = n2d - maxperbin
+
+    ## if there are bins without enough samples, those numbers missing will be
+    ## distributed on the other bins 
+    indxnotzeros = num.argwhere(mod > 0)
+    indxsmallerzeros = num.argwhere(mod <= 0)
+    for idxsz in indxsmallerzeros:
+        missnum -= mod[idxsz[0]][idxsz[1]]
+    missnum = int(abs(missnum))
+
+    ## that a bin that only has n more values than required is not accidentally
+    ## picked more than n-times
+    missnumcnt = 0
+    misspos = []
+    while missnum > indxnotzeros.shape[0]:
+        missnumcnt += 1
+        misspos += indxnotzeros.tolist()
+        missnum -= indxnotzeros.shape[0]
+        indxnotzeros = num.argwhere(mod > missnumcnt)
+    else:
+        missposidx = num.random.choice(indxnotzeros.shape[0], missnum, replace=False)
+        misspos += indxnotzeros[missposidx].tolist()
+
+    rmidxs = []
+    for idxrow in range(len(mod)):
+        for idxcol in range(len(mod[idxrow])):
+
+            rmnum = int(mod[idxrow][idxcol])
+            if rmnum <= 0:
+                continue
+
+            if [idxrow, idxcol] in misspos:
+                rmnum -= misspos.count([idxrow, idxcol])
+
+            mincond1 = bs1[idxrow]
+            maxcond1 = bs1[idxrow + 1]
+            mincond2 = bs2[idxcol]
+            maxcond2 = bs2[idxcol + 1]
+            vals1 = dists
+            vals2 = azis
+
+            idxs = list(num.where(
+                ((vals1 > mincond1) & (vals1 <= maxcond1)) &
+                ((vals2 > mincond2) & (vals2 <= maxcond2))))[0]
+
+            try:
+                rmidx = list(num.random.choice(idxs, rmnum, replace=False))
+            except ValueError as e:
+                print(e)
+                print(idxs)
+                print(len(idxs))
+                print(rmnum)
+                print(int(mod[idxrow][idxcol]))
+                print(idxrow, idxcol)
+                print('\nError can\'t be handled a the moment, chose different parameters')
+                exit()
+            rmidxs += rmidx
+
+    print(len(dists), len(azis))
+    dists = num.delete(dists, rmidxs)
+    azis = num.delete(azis, rmidxs)
+    print(len(dists), len(azis))
+
+    lats = num.delete(lats, rmidxs)
+    lons = num.delete(lons, rmidxs)
+
+    # fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    # ndist, bsdist, _ = axs[0].hist(dists, bins=distbins)
+    # axs[0].set_xlabel('%s dist' % distType)
+    # axs[0].set_ylabel('#')
+    
+    # nazi, bsazi, _ = axs[1].hist(azis, bins=azibins)
+    # axs[1].set_xlabel('%s azi' % aziType)
+    # axs[1].set_ylabel('#')
+    
+    # n2d, bs1, bs2, cb = axs[2].hist2d(dists, azis, bins=(distbins, azibins))
+    # axs[2].set_xlabel('%s dist' % distType)
+    # axs[2].set_ylabel('%s azi' % aziType)
+    # fig.colorbar(cb, ax=axs[2])
+    # fig.savefig('/home/lehmann/dr/plots/grid_sampling_test_downsampling_after.png')
+
+    coords = num.array([lons, lats]).T
 
     return coords
