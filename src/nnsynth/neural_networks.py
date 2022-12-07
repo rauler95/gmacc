@@ -541,77 +541,17 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
     lons, lats = num.array(coords).T
 
     r_hypos = source.calc_distance(lons=lons, lats=lats, distType='rhypo')
-    rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
     azis = source.calc_azimuth(lons=lons, lats=lats)
-    rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
+
+    if source.form == 'point':
+        rrups = None
+        rupazis = None
+    else:
+        rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
+        rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
 
     data = setup_dataframe(source, scalingDict, inputcols,
                     azis, r_hypos, rrups, rupazis, lenfac=len(coords))
-
-    # data = {}
-    # for params in scalingDict.keys():
-    #     if params == 'ev_depth':
-    #         data[params] = [source['depth']] * len(coords)
-    #     elif params == 'azistrike':
-    #         data['azimuth'] = source.calc_azimuth(lons=lons, lats=lats)
-    #         data['strike'] = [source.strike] * len(coords)
-
-    #     elif params in 'rup_azistrike':
-    #         rupazi, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
-    #         data['rup_azimuth'] = rupazi
-    #         # data['centre_azimuth'] = centazi
-
-    #     # elif params in 'rup_azimuth':
-    #     #     rupazi, centazi = source.calc_rupture_azimuth(lons=lons, lats=lats)
-    #     #     data['rup_azimuth'] = rupazi
-    #     #     data['centre_azimuth'] = centazi
-
-    #     elif params in ['rhypo', 'rrup', 'ry0', 'rx', 'rjb']:
-    #         data[params] = source.calc_distance(lons=lons, lats=lats, distType=params)
-
-    #     elif params in ['src_duration']:
-    #         data[params] = [source.duration] * len(coords)
-    #     else:
-    #         if params == 'moment':
-    #             continue
-    #         try:
-    #             data[params] = [source[params]] * len(coords)
-    #         except KeyError as e:
-    #             print('Error', e)
-
-    # data = pd.DataFrame(data)
-    # print(data)
-    # # data = GMpre.calc_azistrike(data)
-
-    # data = GMpre.calc_azistrike(data, strikecol='strike',
-    #     azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
-    # dropcols = ['azimuth', 'strike']
-
-    # if 'rup_azimuth' in data:
-    #     data = GMpre.calc_azistrike(data, strikecol='strike',
-    #         azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
-    #     dropcols.append('rup_azimuth')
-    # data = data.drop(columns=dropcols)
-
-    # data = GMpre.convert_distances(data)
-
-    # if 'moment' in scalingDict:
-    #     data = GMpre.convert_magnitude_to_moment(data)
-
-    # data = GMpre.scale(scalingDict, data, mode='forward')
-
-    # print(data)
-
-    # # rearranging the columns, otherwise the NN does not work properly
-    # # there should be a fix for that to be sure when this is really correct !!!
-    # # cols = [col for col in scalingDict.keys() if col in data.columns]
-    # if inputcols is not None:
-    #     # cols = [col for col in inputcols if col in data.columns]
-    #     cols = inputcols
-    # else:
-    #     cols = [col for col in scalingDict.keys() if col in data.columns]
-    # data = data[cols]
-    # print(data.columns)
 
     return data
 
