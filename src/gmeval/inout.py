@@ -101,7 +101,7 @@ def get_waveform_data(path):
 
         waveformdata = []
         for ii, file in enumerate(os.listdir(path)):
-            print(ii, path, file)
+            # print(ii, path, file)
             wvfile = os.path.join(path, file)
             if os.path.exists(wvfile) and not os.stat(wvfile).st_size < 1:
                 waveformdata.append(*io.load(wvfile))

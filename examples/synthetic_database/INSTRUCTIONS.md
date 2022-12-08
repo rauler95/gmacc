@@ -37,5 +37,5 @@ to modify the parameters have a look at the config file:
 
 *synthetic_database_config_nn.yaml*
 
-for more details look in `gmacc/src/config.py`.
+for more details look in `gmacc/src/config.py`. Here, you will have to play around with all kinds of settings.
 

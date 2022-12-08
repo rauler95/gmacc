@@ -1,12 +1,11 @@
 --- !gmacc.config.ObservationalData
-run: true
 config_path: ''
 comps: ['Z', 'E', 'N']
 rotd100: True
 gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_distant/'
 imts: ['pga', 'pgv', 'pgd']
 sourcemode: MT
-mappoints: 4
+mappoints: 10
 mapextent:
 - 2.0
 - 2.0

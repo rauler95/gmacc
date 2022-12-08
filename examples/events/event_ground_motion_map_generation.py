@@ -4,28 +4,22 @@ import numpy as num
 
 import matplotlib.pyplot as plt
 
-# from pyrocko import io
-# from pyrocko import moment_tensor as pmt
-
 from gmacc import config
-# import gmacc.gmeval.sources as GMs
 import gmacc.gmeval.plot as GMplt
 import gmacc.gmeval.observation as GMobs
 import gmacc.gmeval.util as GMu
 import gmacc.gmeval.inout as GMio
-# import gmacc.nnsynth.preprocessing as GMpre
 
 args = config.ObservationalData(config_path='example_event_config.yaml').get_config()
 print(args)
-
 
 #############################
 ### General Settings
 #############################
 
 ### if waveform data should be deleted, important if interested in plotting waveform
-# deletewf = True
-deletewf = False
+deletewf = True
+# deletewf = False
 appendix = ''
 
 if not os.path.exists(args.outdir):
@@ -151,15 +145,15 @@ for coords, mode in zip(coordinates, ['map', '1D']):
                         mode='disp')
 
             ## Spectra
-            # GMplt.waveform_comparison(args.outdir, source,
-            #           pyrockoCont, stationCont, args.comps, appendix,
-            #           mode='acc', spectrum=True)
-            # GMplt.waveform_comparison(args.outdir, source,
-            #           pyrockoCont, stationCont, args.comps, appendix,
-            #           mode='vel', spectrum=True)
-            # GMplt.waveform_comparison(args.outdir, source,
-            #           pyrockoCont, stationCont, args.comps, appendix,
-            #           mode='disp', spectrum=True)
+            GMplt.waveform_comparison(args.outdir, source,
+                      pyrockoCont, stationCont, args.comps, appendix,
+                      mode='acc', spectrum=True)
+            GMplt.waveform_comparison(args.outdir, source,
+                      pyrockoCont, stationCont, args.comps, appendix,
+                      mode='vel', spectrum=True)
+            GMplt.waveform_comparison(args.outdir, source,
+                      pyrockoCont, stationCont, args.comps, appendix,
+                      mode='disp', spectrum=True)
 
     else:
         print('wrong mode')

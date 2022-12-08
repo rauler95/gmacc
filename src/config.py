@@ -241,12 +241,12 @@ class GroundMotionData(ModuleConfig):
 
     mappoints = Int.T(
         default=10,
-        help='SQRT of Number of points/locations to calculate imts for.')
+        help='Square root of Number of points/locations to calculate waveforms/ground motion parameters for. E.g. 10 would be 100 points.')
 
     mapextent = List.T(
         Float.T(),
         default=[1., 1.],
-        help='List of two numbers which define the map size in degree around the hypocenter.')
+        help='List of two numbers which define the map size in degree around the hypocenter. Can be intereted as [Lon, Lat].')
 
     mapmode = StringChoice.T(
         choices=['rectangular', 'circular', 'random', 'random_circular', 'mixed', 'downsampling'],

@@ -428,7 +428,7 @@ def tensorflow_fit(layers, xTrain, yTrain, options, xTest=[], yTest=[]):
     callbacks = []
 
     if options['learningtype'] == 'own':
-        callbacks.append(combined_callback(cancel_patience=int(options['validepochnum']),
+        callbacks.append(CombinedCallback(cancel_patience=int(options['validepochnum']),
                             decrease_fac=1 / num.sqrt(1.33), decrease_patience=16,
                             increase_fac=num.sqrt(1.33), increase_patience=8,
                             max_lr=0.05, min_lr=0.00001, start_lr=0.0005,
@@ -436,14 +436,14 @@ def tensorflow_fit(layers, xTrain, yTrain, options, xTest=[], yTest=[]):
                             outputdir=options['outdir']))
 
     elif options['learningtype'] == 'default':
-        callbacks.append(combined_callback(cancel_patience=int(options['validepochnum']),
+        callbacks.append(CombinedCallback(cancel_patience=int(options['validepochnum']),
                             decrease_fac=1, decrease_patience=num.Inf,
                             increase_fac=1, increase_patience=num.Inf,
                             min_epochs=options['minepochnum'],
                             outputdir=options['outdir']))
 
     elif options['learningtype'] == 'triangle':
-        callbacks.append(triangle_callback(cancel_patience=int(options['validepochnum']),
+        callbacks.append(TriagnleCallback(cancel_patience=int(options['validepochnum']),
                             max_lr=0.01, min_lr=0.00001,
                             increase_fac=15, 
                             min_epochs=options['minepochnum'],
@@ -1428,7 +1428,7 @@ def feature_importance_one_true(model, xEval, yEval, twoparams=False,
 #####################
 ### Callbacks
 #####################
-class combined_callback(tf.keras.callbacks.Callback):
+class CombinedCallback(tf.keras.callbacks.Callback):
     """Combined callback for learning rate and loss early stopping
     """
 
@@ -1437,7 +1437,7 @@ class combined_callback(tf.keras.callbacks.Callback):
                 decrease_fac=5, decrease_patience=None, max_lr=0.1,
                 increase_fac=5, increase_patience=None, min_lr=0.0001,
                 start_lr=None, outputdir=''):
-        super(combined_callback, self).__init__()
+        super(CombinedCallback, self).__init__()
 
         #  Cancel values
         self.cancel_patience = cancel_patience
@@ -1603,7 +1603,7 @@ class combined_callback(tf.keras.callbacks.Callback):
         plt.close('all')
 
 
-class triangle_callback(tf.keras.callbacks.Callback):
+class TriagnleCallback(tf.keras.callbacks.Callback):
     """Triangle callback with in- and decreasing learning rate and loss-based early stopping
     """
 
@@ -1612,7 +1612,7 @@ class triangle_callback(tf.keras.callbacks.Callback):
                 max_lr=0.1, min_lr=0.0001,
                 increase_fac=5, 
                 start_lr=None, outputdir=''):
-        super(triangle_callback, self).__init__()
+        super(TriagnleCallback, self).__init__()
 
         #  Cancel values
         self.cancel_patience = cancel_patience
