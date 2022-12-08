@@ -12,9 +12,7 @@ from pyrocko.guts import Float, String, Bool, List, Int, load, StringChoice, Obj
 class ModuleConfig(Object):
     '''Configuration of the module run
     '''
-    run = Bool.T(
-        default=True,
-        help='Set to True, if the module shall be runned, else False')
+    pass
 
 
 class NeuralNetwork(ModuleConfig):
@@ -98,7 +96,7 @@ class NeuralNetwork(ModuleConfig):
         and the number of numbers to the number of layers.
         It is also possible to define the hidderlayers depending on the input-
         size. For that, use an additional 'n',
-        e.g. '5n', 5 times the number of input features as node.
+        e.g. '5n', 5 times the number of input features as node size.
         ''')
     
     def get_config(self):

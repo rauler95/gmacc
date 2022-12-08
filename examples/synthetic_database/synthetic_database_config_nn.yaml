@@ -1,19 +1,17 @@
 --- !gmacc.config.NeuralNetwork
-run: true
-config_path: ''
 filecore: 'data'
-indir: 'example_data/MT'
-outdir: 'example_data/MT/nn/'
-# outdir: 'example_data/RS/'
-# outdir: 'example_data/RS/nn/'
+indir: 'example_data/MT/1_pgd/'
+outdir: 'example_data/MT/1_pgd/nn/'
+# outdir: 'example_data/RS/1_pgd/'
+# outdir: 'example_data/RS/1_pgd/nn/'
 maxepochnum: 100
 minepochnum: 1
 validepochnum: 10
 device: 'cpu'
 targetmode: 'multi'
-dropout: 0
+dropouts: [0]
 activations: ['elu']
 optimizers: ['adam']
 learningtypes: ['default']
 batchsizes: [0.1]
-hiddenlayers: [[10, 10], [20,20]]
+hiddenlayers: [[10, 10], ['5n','5n']]

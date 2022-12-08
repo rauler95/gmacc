@@ -6,11 +6,11 @@ from gmacc.nnsynth import neural_networks as GMnn
 from gmacc.nnsynth import preprocessing as GMpre
 
 
-args = config.NeuralNetwork(config_path='neural_network_config.yaml').get_config()
+args = config.NeuralNetwork(config_path='synthetic_database_config_nn.yaml').get_config()
 print(args)
 
 xTrain, yTrain, xTest, yTest, xEval, yEval,\
-		scalingDict, targets, inputcols = GMpre.read_subsets('%s/%s' % (args.indir, args.filecore))
+		scalingDict, targets, inputcols = GMpre.read_subsets('%s/%s' % (args.indir, args.filecore), filetype='pkl')
 
 absRefTime = time.time()
 GMnn.nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,

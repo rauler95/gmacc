@@ -1,10 +1,8 @@
 --- !gmacc.config.SyntheticDatabase
-run: true
-config_path: ''
 outdir: './example_data/'
 comps: ['Z', 'E', 'N']
 rotd100: True
-gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_distant/'
+gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_dist_b/'
 imts: ['pga', 'pgv', 'pgd']
 sourcemode: MT
 srccnt: 100
