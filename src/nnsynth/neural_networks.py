@@ -861,11 +861,11 @@ def load_supportinfo(file):
     return pickle.load(open(file, 'rb'))
 
 
-def model_predict(model, data, batchsize=100):
+def model_predict(model, data, batchsize=10000):
     return model.predict(data, batch_size=batchsize).T
 
 
-def get_predict_df(model, data, targets, batchsize=100):
+def get_predict_df(model, data, targets, batchsize=10000):
 
     pred = model_predict(model, data, batchsize=batchsize)
 
@@ -941,9 +941,9 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
 
 
 def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False,
-        points=20, ymin=-2, ymax=2, axhline=1):
+        points=20, ymin=-2, ymax=2, axhline=1, figsize=(8, 6)):
 
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=figsize)
     widths = (num.nanmax(positions) - num.nanmin(positions)) / (len(positions))
     ## widths alternative with num.diff
     parts = plt.violinplot(diffs, positions=positions, points=points, 
@@ -1010,7 +1010,7 @@ def evaluate_gm_general(predDF, yEval, targets, outdir, predirectory=True, filep
     plt.close('all')
 
 
-def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode='box', violinpoints=20):
+def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode='box', violinpoints=20, figsize=(8, 6)):
 
     for col in columns:
         if col not in xEval:
@@ -1046,7 +1046,7 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
                 violinplot(diffs, positions, pltcols, xlabel=col,
                     outdir=outdir, fileprefix='%s_%s_' % (target, col), 
                     ymin=-0.2, ymax=0.2, axhline=0,
-                    points=violinpoints)
+                    points=violinpoints, figsize=figsize)
             else:
                 print('Wrong plotmode: %s' % plotmode)
 
@@ -1422,7 +1422,6 @@ def feature_importance_one_true(model, xEval, yEval, twoparams=False,
 
     print('All features except the named ones were replaced by %s:' % mode)
     print(df.sort_values(by='loss'))
-
 
 
 #####################

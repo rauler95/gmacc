@@ -445,8 +445,10 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     refx, refy = m(obsLon, obsLat)
 
                     if valmode in ['abs', 'true']:
-                        absres = max(abs(residuum))
-                        reslevel = num.linspace(-absres, absres, 21)
+                        # absres = max(abs(residuum))
+                        # reslevel = num.linspace(-absres, absres, 21)
+                        stdres = num.std(residuum)
+                        reslevel = num.linspace(-stdres, stdres, 21)
                         ticks = reslevel
 
                         if gm == 'pga':
@@ -463,8 +465,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                             label = 'Ratio'
                         else:
                             label = 'UKN'
-
                         label = 'Difference ' + label
+                    
                     else:
                         if gm == 'pga':
                             label = '% g in log10'
