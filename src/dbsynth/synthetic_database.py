@@ -166,14 +166,16 @@ def create_random_source(sourcemode, ii=None, mag=None, lat=None, lon=None,
         
         width, length = GMu.calc_source_width_length(mag, mode='Blaser', rake=rake)
 
+        vr = 0.8 * 3460
         src = gf.RectangularSource(time=util.str_to_time('1995-01-29 13:00:00.0'),
-                            lat=lat, lon=lon, depth=depth * 1000., anchor=anchor,
-                            strike=strike, dip=dip, rake=rake,
-                            width=width * 1000., length=length * 1000.,
-                            nucleation_x=nucx,
-                            nucleation_y=nucy,
-                            decimation_factor=1,
-                            magnitude=mag)
+                lat=lat, lon=lon, depth=depth * 1000., anchor=anchor,
+                strike=strike, dip=dip, rake=rake,
+                width=width * 1000., length=length * 1000.,
+                nucleation_x=nucx,
+                nucleation_y=nucy,
+                decimation_factor=1,
+                velocity=vr,
+                magnitude=mag)
         src.validate()
         source = GMs.from_rectsource_to_own_source(src)
         source.create_rupture_surface()

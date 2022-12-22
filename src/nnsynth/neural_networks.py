@@ -783,7 +783,6 @@ def dataframe_to_stadict(preddf, multicoords):
 
 
 def get_NN_prediction_together(srcs, modelfile, suppfile, multicoords):
-    from pyrocko import moment_tensor as pmt
 
     print(modelfile)
     model = load_model(modelfile)
@@ -800,7 +799,7 @@ def get_NN_prediction_together(srcs, modelfile, suppfile, multicoords):
         r_hypos = GMs.get_distances(lons, lats, src, distType='hypo')
         azis = GMs.get_azimuths(lons, lats, src, aziType='hypo')
 
-        print(src)
+        # print(src)
 
         if src.form == 'point':
             rrups = None
@@ -824,17 +823,70 @@ def get_NN_prediction_together(srcs, modelfile, suppfile, multicoords):
         # alldata.append(data)
     alldata = pd.concat(datas, ignore_index=True)
     print(alldata)
-    print('Finished data preparation: in %s s' % (time.time() - dabs_ref_time))
+    print('Finished data pre preparation: in %s s' % (time.time() - dabs_ref_time))
 
     preddf = get_predict_df(model, alldata, targets, batchsize=10000)
+    dabs_ref_time = time.time()
     preddf = GMpre.scale(scaling_dict, preddf, mode='inverse')
     # print(alldata)
 
     stadicts = dataframe_to_stadict(preddf, multicoords)
+
     conts = []
     for ss in range(len(srcs)):
         conts.append(GMs.StationContainer(refSource=srcs[ss], stations=stadicts[ss]))
+    print('Finished data post preparation: in %s s' % (time.time() - dabs_ref_time))
     return conts
+
+
+def get_NN_prediction_prob_map(srcs, modelfile, suppfile, multicoords):
+
+    print(modelfile)
+    model = load_model(modelfile)
+    
+    scaling_dict, targets, inputcols = load_supportinfo(suppfile)
+
+    datas = []
+    # alldata = pd.DataFrame()
+
+    dabs_ref_time = time.time()
+    for coords, src in zip(multicoords, srcs):
+        # src.depth = src.depth * 1000.
+        lons, lats = num.array(coords).T
+        r_hypos = GMs.get_distances(lons, lats, src, distType='hypo')
+        azis = GMs.get_azimuths(lons, lats, src, aziType='hypo')
+
+        # print(src)
+
+        if src.form == 'point':
+            rrups = None
+            rupazis = None
+
+        elif src.form == 'rectangular':
+
+            rrups = GMs.get_distances(lons, lats, src, distType='rrup')
+            rupazis = GMs.get_azimuths(lons, lats, src, aziType='rup')
+        else:
+            print('Wrong form: %s, not implemented yet.' % src.form)
+            exit()
+
+        lenfac = len(lons)
+        # src.depth = src.depth / 1000.
+        data = setup_dataframe(src, scaling_dict, inputcols,
+            azis, r_hypos, rrups, rupazis, lenfac)
+
+        # alldata = pd.concat([alldata, data], ignore_index=True)
+        datas.append(data)
+        # alldata.append(data)
+    alldata = pd.concat(datas, ignore_index=True)
+    print(alldata)
+    print('Finished data pre preparation: in %s s' % (time.time() - dabs_ref_time))
+
+    preddf = get_predict_df(model, alldata, targets, batchsize=10000)
+    preddf = GMpre.scale(scaling_dict, preddf, mode='inverse')
+
+    return preddf
+
 
 #####################
 ### Misc
@@ -941,7 +993,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
 
 
 def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False,
-        points=20, ymin=-2, ymax=2, axhline=1, figsize=(8, 6)):
+        points=20, ymin=-2, ymax=2, axhline=1, figsize=(8, 6), grid=False):
 
     fig = plt.figure(figsize=figsize)
     widths = (num.nanmax(positions) - num.nanmin(positions)) / (len(positions))
@@ -960,8 +1012,10 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
     plt.vlines(positions, *doublestd, color='darkgrey', linestyle='-', lw=5, label='2*Std')
     plt.vlines(positions, *std, color='black', linestyle='-', lw=5, label='Std')
 
-    # plt.grid(True, 'both')
-    plt.xticks(positions, labels=labels)
+    if grid is True:
+        plt.grid(True, 'both')
+    else:
+        plt.xticks(positions, labels=labels)
     plt.ylabel('Difference')
     plt.xlabel(xlabel)
     if axhline:
@@ -1020,9 +1074,10 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
         maxcol = max(xEval[col])
         mincol = min(xEval[col])
 
-        colranges = num.linspace(mincol * 0.99, maxcol * 1.01, 10)
+        colranges = num.linspace(mincol * 0.99, maxcol * 1.01, 11)
         pltcols = num.round(colranges[:-1] + (colranges[1] - colranges[0]) / 2, 2)
-        positions = num.arange(0, len(pltcols))
+        # positions = num.arange(0, len(pltcols))
+        positions = pltcols
         
         for target in targets:
             diffs = []
@@ -1045,7 +1100,7 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
             elif plotmode == 'violin':
                 violinplot(diffs, positions, pltcols, xlabel=col,
                     outdir=outdir, fileprefix='%s_%s_' % (target, col), 
-                    ymin=-0.2, ymax=0.2, axhline=0,
+                    ymin=-0.2, ymax=0.2, axhline=0, grid=True,
                     points=violinpoints, figsize=figsize)
             else:
                 print('Wrong plotmode: %s' % plotmode)

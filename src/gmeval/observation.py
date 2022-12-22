@@ -847,7 +847,7 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
 
         if source.rupture_velocity is not None and source.rupture_velocity not in [-99.0, 0.0, 999.0]:
             vr = source.rupture_velocity * 1000.
-            print('Rupture velocity:', vr)
+            # print('Rupture velocity:', vr)
         else:
             vr = 0.8 * 3460
 
