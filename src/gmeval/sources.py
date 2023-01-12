@@ -1059,7 +1059,7 @@ def from_mtsource_to_own_source(src):
         time=src.time,
         lon=float(src.lon),  # hypo
         lat=float(src.lat),  # hypo
-        depth=float(src.depth),  # hypo
+        depth=float(src.depth) / 1000.,  # hypo
         magnitude=float(mt.moment_magnitude()),
         strike=float(mt.strike1),
         dip=float(mt.dip1),

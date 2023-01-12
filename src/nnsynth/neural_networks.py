@@ -557,66 +557,38 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
 
 
 def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
-    print(modelfile)
     model = load_model(modelfile)
+    scalingDict, targets, inputcols = load_supportinfo(suppfile)
     lons, lats = num.array(coords).T
 
-    try:
-        scalingDict, targets, inputcols = load_supportinfo(suppfile)
-    except ValueError:
-        scalingDict, targets = load_supportinfo(suppfile)
-        inputcols = None
-
+    # dabs_ref_time = time.time()
     data = prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords)
-
-    print(source)
-    print()
-    print(data)
-    print()
+    # print('Finished data pre preparation: in %s s' % (time.time() - dabs_ref_time))
 
     ## Predicting
-    pred = model_predict(model, data, int(data.shape[0] / 100))
-
-    if targetsMain:
-        targets = targetsMain
-        # preddict = preddict[targetsMain]
-    else:
-        targets = check_multi_or_single_nn(modelfile, targets)
-
-    preddict = {}
-    for nn in range(len(targets)):
-        preddict[targets[nn]] = pred[nn]
-
+    # dabs_ref_time = time.time()
+    preddict = get_predict_df(model, data, targets)
     preddict = GMpre.scale(scalingDict, preddict, mode='inverse')
 
     preddict['lon'] = lons
     preddict['lat'] = lats
     staDict = {}
     for idx, row in preddict.iterrows():
-        ns = 'PR.S%s' % (idx)
+        net = 'PR'
+        sta = 'S%s' % (idx)
+        ns = '%s_%s' % (net, sta)
+
+        STA = GMs.StationGMClass(
+            network=net,
+            station=sta,
+            lat=float(row.lat),
+            lon=float(row.lon),
+            components={})
 
         for chagm in targets:
             t = chagm.rsplit('_')
-
-            t = chagm.rsplit('_')
             comp = t[0]
-
-            if t[1] == 'f':
-                gm = '%s_%s' % (t[1], t[2])
-            else:
-                gm = t[1]
-
-            lat = row.lat
-            lon = row.lon
-            if ns not in staDict:
-                STA = GMs.StationGMClass(
-                    network=ns.rsplit('.')[0],
-                    station=ns.rsplit('.')[1],
-                    lat=float(lat),
-                    lon=float(lon),
-                    components={})
-            else:
-                STA = staDict['%s.%s' % (ns.rsplit('.')[0], ns.rsplit('.')[1])]
+            gm = chagm[2:]
 
             if comp not in STA.components:
                 COMP = GMs.ComponentGMClass(
@@ -632,15 +604,48 @@ def get_NNcontainer(source, modelfile, suppfile, coords, targetsMain=None):
             staDict[ns] = STA
 
     NNCont = GMs.StationContainer(refSource=source, stations=staDict)
-    NNCont.validate()
+    # NNCont.validate()
+    # print('Finished data post preparation: in %s s' % (time.time() - dabs_ref_time))
 
     return NNCont
+
+
+def get_NNdict(source, modelfile, suppfile, coords, targetsMain=None):
+    model = load_model(modelfile)
+    scalingDict, targets, inputcols = load_supportinfo(suppfile)
+
+    lons, lats = num.array(coords).T
+
+    data = prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords)
+
+    ## Predicting
+    preddf = get_predict_df(model, data, targets)
+    preddf = GMpre.scale(scalingDict, preddf, mode='inverse')
+
+    preddict = {}
+    for chagm in preddf.columns:
+        t = chagm.rsplit('_')
+        comp = t[0]
+        gm = chagm[2:]
+
+        if gm not in preddict:
+            preddict[gm] = {}
+
+        if comp not in preddict[gm]:
+            preddict[gm][comp] = {'vals': [], 'lons': [], 'lats': []}
+
+        for rr, row in preddf.iterrows():
+            val = row[chagm]
+            preddict[gm][comp]['vals'].append(val)
+            preddict[gm][comp]['lons'].append(lons[rr])
+            preddict[gm][comp]['lats'].append(lats[rr])
+
+    return preddict
 
 
 ###
 # Predicting based on source
 ###
-
 
 def setup_dataframe(src, scaling_dict, inputcols,
                     azis, r_hypos, rrups, rupazis, lenfac):
@@ -776,66 +781,35 @@ def dataframe_to_stadict(preddf, multicoords):
 
                 else:
                     staDict[ns].components[COMP.component] = COMP
-
         staDicts.append(staDict)
 
     return staDicts
 
 
-def get_NN_prediction_together(srcs, modelfile, suppfile, multicoords):
-
-    print(modelfile)
+def get_NNcont_prediction_together(srcs, modelfile, suppfile, multicoords):
     model = load_model(modelfile)
     
-    scaling_dict, targets, inputcols = load_supportinfo(suppfile)
-
+    scalingdict, targets, inputcols = load_supportinfo(suppfile)
     datas = []
-    # alldata = pd.DataFrame()
 
-    dabs_ref_time = time.time()
+    # dabs_ref_time = time.time()
     for coords, src in zip(multicoords, srcs):
-        # src.depth = src.depth * 1000.
-        lons, lats = num.array(coords).T
-        r_hypos = GMs.get_distances(lons, lats, src, distType='hypo')
-        azis = GMs.get_azimuths(lons, lats, src, aziType='hypo')
-
-        # print(src)
-
-        if src.form == 'point':
-            rrups = None
-            rupazis = None
-
-        elif src.form == 'rectangular':
-
-            rrups = GMs.get_distances(lons, lats, src, distType='rrup')
-            rupazis = GMs.get_azimuths(lons, lats, src, aziType='rup')
-        else:
-            print('Wrong form: %s, not implemented yet.' % src.form)
-            exit()
-
-        lenfac = len(lons)
-        # src.depth = src.depth / 1000.
-        data = setup_dataframe(src, scaling_dict, inputcols,
-            azis, r_hypos, rrups, rupazis, lenfac)
-
-        # alldata = pd.concat([alldata, data], ignore_index=True)
+        data = prepare_NN_prediction_data(src, scalingdict, targets, inputcols, coords)
         datas.append(data)
-        # alldata.append(data)
-    alldata = pd.concat(datas, ignore_index=True)
-    print(alldata)
-    print('Finished data pre preparation: in %s s' % (time.time() - dabs_ref_time))
 
+    alldata = pd.concat(datas, ignore_index=True)
+    # print('Finished data pre preparation: in %s s' % (time.time() - dabs_ref_time))
+
+    # dabs_ref_time = time.time()
     preddf = get_predict_df(model, alldata, targets, batchsize=10000)
-    dabs_ref_time = time.time()
-    preddf = GMpre.scale(scaling_dict, preddf, mode='inverse')
-    # print(alldata)
+    preddf = GMpre.scale(scalingdict, preddf, mode='inverse')
 
     stadicts = dataframe_to_stadict(preddf, multicoords)
 
     conts = []
     for ss in range(len(srcs)):
         conts.append(GMs.StationContainer(refSource=srcs[ss], stations=stadicts[ss]))
-    print('Finished data post preparation: in %s s' % (time.time() - dabs_ref_time))
+    # print('Finished data post preparation: in %s s' % (time.time() - dabs_ref_time))
     return conts
 
 
@@ -910,6 +884,7 @@ def load_model(file):
 #         return scalingDict, targets
 
 def load_supportinfo(file):
+    ## produces output: scalingDict, targets, inputcols
     return pickle.load(open(file, 'rb'))
 
 
@@ -950,7 +925,7 @@ def evaluation_synthetic_database(model, xEval, yEval, scalingDict, targets, out
             outdir)
 
 
-def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False, widths=None):
+def boxplot(diffs, positions, labels, outdir, xlabel='', ylabel='Difference', fileprefix='', predirectory=False, widths=None):
 
     try:
         nlabels = []
@@ -979,7 +954,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
     plt.axhline(0.5, color='black', linestyle=':')
     plt.axhline(-0.5, color='black', linestyle=':')
     plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
-    plt.ylabel('Difference')
+    plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     plt.xticks(rotation='60')
     plt.tight_layout()
@@ -992,7 +967,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirec
     return fig, ax
 
 
-def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predirectory=False,
+def violinplot(diffs, positions, labels, outdir, xlabel='', ylabel='Difference', fileprefix='', predirectory=False,
         points=20, ymin=-2, ymax=2, axhline=1, figsize=(8, 6), grid=False):
 
     fig = plt.figure(figsize=figsize)
@@ -1009,15 +984,15 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', fileprefix='', predi
     doublestd = num.array([num.percentile(list(d), [2.5, 97.5]) for d in diffs]).T
     std = num.array([num.percentile(list(d), [16, 84]) for d in diffs]).T
     plt.scatter(positions, [num.median(d) for d in diffs], marker='o', color='darkgrey', s=30, zorder=3, label='median')
-    plt.vlines(positions, *doublestd, color='darkgrey', linestyle='-', lw=5, label='2*Std')
-    plt.vlines(positions, *std, color='black', linestyle='-', lw=5, label='Std')
+    plt.vlines(positions, *std, color='black', linestyle='-', lw=5, label='Std', zorder=2)
+    plt.vlines(positions, *doublestd, color='darkgrey', linestyle='-', lw=5, label='2*Std', zorder=1)
 
     if grid is True:
         plt.grid(True, 'both')
     else:
         plt.xticks(positions, labels=labels)
-    plt.ylabel('Difference')
-    plt.xlabel(xlabel)
+    plt.ylabel(ylabel, fontsize=17)
+    plt.xlabel(xlabel, fontsize=17)
     if axhline:
         plt.axhline(1 * axhline, color='black', linestyle='--')
         plt.axhline(-1 * axhline, color='black', linestyle='--')
@@ -1095,13 +1070,13 @@ def evaluate_gm_column(columns, predDF, xEval, yEval, targets, outdir, plotmode=
                 pltlabels.append('%0.2f\n(%s)' % ((colranges[imag + 1] + colranges[imag]) / 2, len(diff)))
 
             if plotmode == 'box':
-                boxplot(diffs, positions, pltcols, xlabel=col,
+                boxplot(diffs, positions, pltcols, xlabel=col.capitalize(),
                     outdir=outdir, fileprefix='%s_%s_' % (target, col))
             elif plotmode == 'violin':
-                violinplot(diffs, positions, pltcols, xlabel=col,
+                violinplot(diffs, positions, pltcols, xlabel=col.capitalize(),
                     outdir=outdir, fileprefix='%s_%s_' % (target, col), 
                     ymin=-0.2, ymax=0.2, axhline=0, grid=True,
-                    points=violinpoints, figsize=figsize)
+                    points=violinpoints, figsize=figsize, ylabel='Difference [log10]')
             else:
                 print('Wrong plotmode: %s' % plotmode)
 
@@ -1138,7 +1113,8 @@ def nn_evaluation(model, history,
         'targets': str(targets).replace(',', ';'),
     }
 
-    evl_batchsize = int(xTrain.shape[0] / 100000.)
+    # evl_batchsize = int(xTrain.shape[0] / 100.)
+    evl_batchsize = 1000
     for xdat, ydat, name in zip([xTrain, xTest, xEval],
                                 [yTrain, yTest, yEval],
                                 ['Train', 'Test', 'Eval']):
@@ -1149,9 +1125,9 @@ def nn_evaluation(model, history,
             if xdat.empty:
                 continue
 
-        evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
+        evaluation = model.evaluate(xdat, ydat, verbose=2, batch_size=evl_batchsize)
         print(evaluation)
-        prediction = model_predict(model, xdat, batchsize=evl_batchsize)
+        prediction = model_predict(model, xdat, verbose=2, batchsize=evl_batchsize)
         trueval = ydat.values.T
         if type(evaluation) is float:
             evaluation = [evaluation]
