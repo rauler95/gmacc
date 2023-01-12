@@ -1125,9 +1125,9 @@ def nn_evaluation(model, history,
             if xdat.empty:
                 continue
 
-        evaluation = model.evaluate(xdat, ydat, verbose=2, batch_size=evl_batchsize)
+        evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
         print(evaluation)
-        prediction = model_predict(model, xdat, verbose=2, batchsize=evl_batchsize)
+        prediction = model_predict(model, xdat, batchsize=evl_batchsize)
         trueval = ydat.values.T
         if type(evaluation) is float:
             evaluation = [evaluation]
