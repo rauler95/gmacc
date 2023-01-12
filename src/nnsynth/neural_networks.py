@@ -20,7 +20,7 @@ import gmacc.gmeval.util as GMu
 
 
 def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
-        scalingDict, targets, inputcols, prefix='', gpu_num="1"):
+        scalingDict, targets, inputcols, prefix='', gpu_num="1", evaluation=True):
 
     if args.device == 'cpu':
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -121,10 +121,11 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             model, history = tensorflow_fit(hiddenlayer, xTrain, yTrain,
                                             parameters, xTest, yTest)
 
-            nn_evaluation(model, history,
-                xTrain, yTrain, xTest, yTest, xEval, yEval,
-                targets, scalingDict, hiddenlayer, parameters, 
-                targetwise=True, prefix=prefix)
+            if evaluation is True:
+                nn_evaluation(model, history,
+                    xTrain, yTrain, xTest, yTest, xEval, yEval,
+                    targets, scalingDict, hiddenlayer, parameters,
+                    targetwise=True, prefix=prefix)
 
             reset_session(model, history)
 
@@ -1113,8 +1114,8 @@ def nn_evaluation(model, history,
         'targets': str(targets).replace(',', ';'),
     }
 
-    # evl_batchsize = int(xTrain.shape[0] / 100.)
-    evl_batchsize = 1000
+    evl_batchsize = int(xTrain.shape[0] / 100.)
+    # evl_batchsize = 10000
     for xdat, ydat, name in zip([xTrain, xTest, xEval],
                                 [yTrain, yTest, yEval],
                                 ['Train', 'Test', 'Eval']):
@@ -1125,9 +1126,8 @@ def nn_evaluation(model, history,
             if xdat.empty:
                 continue
 
-        # evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
-        # print(evaluation)
-        evaluation = -1
+        evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
+        print(evaluation)
         prediction = model_predict(model, xdat, batchsize=evl_batchsize)
         trueval = ydat.values.T
         if type(evaluation) is float:
