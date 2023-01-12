@@ -1114,7 +1114,7 @@ def nn_evaluation(model, history,
     }
 
     # evl_batchsize = int(xTrain.shape[0] / 100.)
-    evl_batchsize = 1000
+    evl_batchsize = 10
     for xdat, ydat, name in zip([xTrain, xTest, xEval],
                                 [yTrain, yTest, yEval],
                                 ['Train', 'Test', 'Eval']):
