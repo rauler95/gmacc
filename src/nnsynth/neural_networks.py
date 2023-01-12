@@ -1114,7 +1114,7 @@ def nn_evaluation(model, history,
     }
 
     # evl_batchsize = int(xTrain.shape[0] / 100.)
-    evl_batchsize = 10
+    evl_batchsize = 1000
     for xdat, ydat, name in zip([xTrain, xTest, xEval],
                                 [yTrain, yTest, yEval],
                                 ['Train', 'Test', 'Eval']):
@@ -1125,8 +1125,9 @@ def nn_evaluation(model, history,
             if xdat.empty:
                 continue
 
-        evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
-        print(evaluation)
+        # evaluation = model.evaluate(xdat, ydat, batch_size=evl_batchsize)
+        # print(evaluation)
+        evaluation = -1
         prediction = model_predict(model, xdat, batchsize=evl_batchsize)
         trueval = ydat.values.T
         if type(evaluation) is float:
