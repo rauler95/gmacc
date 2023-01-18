@@ -251,6 +251,36 @@ def cc1squarenorm(y_true, y_pred):
     return cc + rms + offset
 
 
+def cc1squarenorm_fft(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 1
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = (1 - r)**2
+
+    offset = mse(y_true[:, -1], y_pred[:, -1])
+    # tf.print(y_true[:, num_nonwaveform])
+    # tf.print(y_pred[:, num_nonwaveform])
+    # tf.print(offset)
+
+    return cc + rms + offset
+
+
+
+
 def cc1euler(y_true, y_pred):
     '''
     At the moment the first three values are assumed to be non-waveform
@@ -295,6 +325,31 @@ def cc1eulernorm(y_true, y_pred):
     cc = tf.math.exp(1.0) - tf.math.exp(r)
 
     offset = mse(y_true[:, num_nonwaveform], y_pred[:, num_nonwaveform])
+
+    return cc + rms + offset
+
+
+def cc1eulernorm_fft(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 1
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    offset = mse(y_true[:, -1], y_pred[:, -1])
 
     return cc + rms + offset
 
@@ -446,8 +501,12 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = cc1euler
     elif loss == 'cc1squarenorm':
         loss = cc1squarenorm
+    elif loss == 'cc1squarenorm_fft':
+        loss = cc1squarenorm_fft
     elif loss == 'cc1eulernorm':
         loss = cc1eulernorm
+    elif loss == 'cc1eulernorm_fft':
+        loss = cc1eulernorm_fft
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -917,8 +976,10 @@ def load_model(file):
                         'cc3euler': cc3euler,
                         'cc1square': cc1square,
                         'cc1squarenorm': cc1squarenorm,
+                        'cc1squarenorm_fft': cc1squarenorm_fft,
                         'cc1euler': cc1euler,
-                        'cc1eulernorm': cc1eulernorm})
+                        'cc1eulernorm': cc1eulernorm,
+                        'cc1eulernorm_fft': cc1eulernorm_fft})
 
 
 # def load_scalingdict(file):
