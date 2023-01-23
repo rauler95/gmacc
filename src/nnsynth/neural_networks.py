@@ -14,6 +14,10 @@ from gmacc.nnsynth import preprocessing as GMpre
 
 import gmacc.gmeval.sources as GMs
 import gmacc.gmeval.util as GMu
+
+from pyrocko import orthodrome
+# from pyrocko import moment_tensor as pmt
+
 #####################
 ### Model generation
 #####################
@@ -279,6 +283,60 @@ def cc1squarenorm_fft(y_true, y_pred):
     return cc + rms + offset
 
 
+def cc3squarenorm(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 3
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = (1 - r)**2
+
+    offset = mse(y_true[:, num_nonwaveform], y_pred[:, num_nonwaveform])
+    # tf.print(y_true[:, num_nonwaveform])
+    # tf.print(y_pred[:, num_nonwaveform])
+    # tf.print(offset)
+
+    return cc + rms + offset
+
+
+def cc3squarenorm_fft(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 3
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = (1 - r)**2
+
+    offset = mse(y_true[:, -1], y_pred[:, -1])
+    # tf.print(y_true[:, num_nonwaveform])
+    # tf.print(y_pred[:, num_nonwaveform])
+    # tf.print(offset)
+
+    return cc + rms + offset
 
 
 def cc1euler(y_true, y_pred):
@@ -336,6 +394,56 @@ def cc1eulernorm_fft(y_true, y_pred):
     import tensorflow.keras.losses as L
 
     num_nonwaveform = 1
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    offset = mse(y_true[:, -1], y_pred[:, -1])
+
+    return cc + rms + offset
+
+
+def cc3eulernorm(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 3
+    xs = y_true[:, :num_nonwaveform]
+    ys = y_pred[:, :num_nonwaveform]
+
+    x = y_true[:, num_nonwaveform:]
+    y = y_pred[:, num_nonwaveform:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    r = correlationcoeff(x, y)
+
+    cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    offset = mse(y_true[:, num_nonwaveform], y_pred[:, num_nonwaveform])
+
+    return cc + rms + offset
+
+
+def cc3eulernorm_fft(y_true, y_pred):
+    '''
+    At the moment the first values are assumed to be non-waveform
+    '''
+    import tensorflow.keras.losses as L
+
+    num_nonwaveform = 3
     xs = y_true[:, :num_nonwaveform]
     ys = y_pred[:, :num_nonwaveform]
 
@@ -499,6 +607,10 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = cc1square
     elif loss == 'cc1euler':
         loss = cc1euler
+    elif loss == 'cc3square':
+        loss = cc3square
+    elif loss == 'cc3euler':
+        loss = cc3euler
     elif loss == 'cc1squarenorm':
         loss = cc1squarenorm
     elif loss == 'cc1squarenorm_fft':
@@ -507,6 +619,14 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = cc1eulernorm
     elif loss == 'cc1eulernorm_fft':
         loss = cc1eulernorm_fft
+    elif loss == 'cc3squarenorm':
+        loss = cc3squarenorm
+    elif loss == 'cc3squarenorm_fft':
+        loss = cc3squarenorm_fft
+    elif loss == 'cc3eulernorm':
+        loss = cc3eulernorm
+    elif loss == 'cc3eulernorm_fft':
+        loss = cc3eulernorm_fft
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -643,16 +763,45 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
     # model = load_model(modelfile)
 
     lons, lats = num.array(coords).T
+    if hasattr(source, 'form'):
+        print(source.form)
 
-    r_hypos = source.calc_distance(lons=lons, lats=lats, distType='rhypo')
-    azis = source.calc_azimuth(lons=lons, lats=lats)
+        r_hypos = source.calc_distance(lons=lons, lats=lats, distType='rhypo')
+        azis = source.calc_azimuth(lons=lons, lats=lats)
 
-    if source.form == 'point':
+        if source.form == 'point':
+            rrups = None
+            rupazis = None
+        else:
+            rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
+            rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
+
+    else:
+
+        # mt = pmt.MomentTensor(
+        #         mnn=source.mnn,
+        #         mee=source.mee,
+        #         mdd=source.mdd,
+        #         mne=source.mne,
+        #         mnd=source.mnd,
+        #         med=source.med)
+        mt = source.pyrocko_moment_tensor()
+
+        source.magnitude = mt.moment_magnitude()
+        source.rake = mt.rake1
+        source.dip = mt.dip1
+        source.strike = mt.strike1
+        source.duration = source.stf.duration
+        source.depth /= 1000.
+
+        r_hypos = orthodrome.distance_accurate50m_numpy(
+                    num.array(source.lat), num.array(source.lon),
+                    num.array(lats), num.array(lons)) / 1000.
+        azis = orthodrome.azimuth_numpy(num.array(source.lat), num.array(source.lon),
+                    num.array(lats), num.array(lons))
+
         rrups = None
         rupazis = None
-    else:
-        rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
-        rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
 
     data = setup_dataframe(source, scalingDict, inputcols,
                     azis, r_hypos, rrups, rupazis, lenfac=len(coords))
@@ -979,7 +1128,11 @@ def load_model(file):
                         'cc1squarenorm_fft': cc1squarenorm_fft,
                         'cc1euler': cc1euler,
                         'cc1eulernorm': cc1eulernorm,
-                        'cc1eulernorm_fft': cc1eulernorm_fft})
+                        'cc1eulernorm_fft': cc1eulernorm_fft,
+                        'cc3squarenorm': cc3squarenorm,
+                        'cc3squarenorm_fft': cc3squarenorm_fft,
+                        'cc3eulernorm': cc3eulernorm,
+                        'cc31eulernorm_fft': cc3eulernorm_fft})
 
 
 # def load_scalingdict(file):

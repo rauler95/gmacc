@@ -1590,7 +1590,7 @@ def get_stf_with_duration(source, rupture_duration_mode='uncertain'):
         if hasattr(sstf, 'type') and sstf.type == 'triangle':
             stf = gf.TriangularSTF(duration=duration)
         elif hasattr(sstf, 'type') and sstf.type == 'boxcar':
-            stf = gf.BoxcarSTF(duration=duration)
+            stf = gf.BoxcarSTF(anchor=0, duration=duration)
         else:
             stf = gf.HalfSinusoidSTF(anchor=0, duration=duration)
 

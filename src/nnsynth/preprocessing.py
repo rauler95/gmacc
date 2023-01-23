@@ -254,7 +254,7 @@ def scale(scalingDict, data, mode='forward', verbose=False):
         elif 'mean' in scalingDict[col] and 'std' in scalingDict[col]:
             ndata[col] = standardize_column(scalingDict, data, col, mode)
         else:
-            print('Wrong scaling mode')
+            print('Scaling dict contains nothing that can be used for scaling.')
             exit()
 
     return pd.DataFrame(ndata)
@@ -385,6 +385,33 @@ def read_subsets(filecore, filetype='csv'):
     # print(targets)
 
     return xTrain, yTrain, xTest, yTest, xEval, yEval, scalingDict, targets, inputcols
+
+
+def read_subsets_eval(filecore, filetype='csv'):
+    print(filecore)
+
+    if filetype.lower() == 'csv':
+        xEval = pd.read_csv('%s_xeval.csv' % (filecore))
+        yEval = pd.read_csv('%s_yeval.csv' % (filecore))
+    
+    elif filetype.lower() in ['bin', 'binary', 'pickle', 'pkl']:
+        xEval = pd.read_pickle('%s_xeval.pkl' % (filecore))
+        yEval = pd.read_pickle('%s_yeval.pkl' % (filecore))
+
+    else:
+        print('Wrong filetype: %s' % filetype)
+        exit()
+
+    scalingDict, targets, inputcols = pickle.load(open('%s_scalingdict.bin' % (filecore), 'rb'))
+
+    # print(xTrain)
+    # print(xTest)
+    # print(xEval)
+
+    # print(scalingDict)
+    # print(targets)
+
+    return xEval, yEval, scalingDict, targets, inputcols
 
 
 # def read_evaluation_data(filecore):

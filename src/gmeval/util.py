@@ -218,7 +218,7 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
             vr = 0.8 * (vs)
         print('Rupture velocity:', vr)
 
-        if source.length and source.width:
+        if hasattr(source, 'length') and hasattr(source, 'width'):
             WD = source.width
             LN = source.length
         else:
@@ -380,13 +380,17 @@ def random_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf)
 def rectangular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf):
     coords = []
 
-    if source.form == 'point':
+    if hasattr(source, 'form'):
+        if source.form == 'point':
+            sourcelat = source.lat
+            sourcelon = source.lon
+        else:
+            mpc = source.surface.get_middle_point()
+            sourcelat = mpc.latitude
+            sourcelon = mpc.longitude
+    else:
         sourcelat = source.lat
         sourcelon = source.lon
-    else:
-        mpc = source.surface.get_middle_point()
-        sourcelat = mpc.latitude
-        sourcelon = mpc.longitude
 
     lats = num.linspace(sourcelat - mapextent[1],
                         sourcelat + mapextent[1], ncoords)
