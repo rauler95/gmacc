@@ -1,0 +1,3 @@
+prefix,layers,device,activation,optimizer,batchsize,max_epochs,valid_epochs,dropout,learning_type,exit_epoch,num_params,train_time,targets,Train_loss,Z_pgd-Train_rms,Eval_loss,Z_pgd-Eval_rms
+,[10  10],cpu,elu,adam,800,100,10,0.0,default,100,201,4.057273864746094,['Z_pgd'],0.0033453,0.0578384,0.0044753,0.0668976
+,['5n'  '5n'],cpu,elu,adam,800,100,10,0.0,default,100,1576,4.1673197746276855,['Z_pgd'],0.0031793,0.0563849,0.0041042,0.0640637
