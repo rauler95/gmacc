@@ -995,23 +995,19 @@ def get_distances(lons, lats, source, distType='hypo'):
     else:
         hypoDepth = source.depth / 1000.
 
-    dists = []
-    points = []
-    for ii in range(len(lons)):
-        if distType == 'hypo':
-            dist = geodetic.distance(hypoLon, hypoLat, hypoDepth,
-                                     lons[ii], lats[ii], 0.)
-            dists.append(dist)
-        else:
+    if distType == 'hypo':
+        dists = geodetic.distance(hypoLon, hypoLat, hypoDepth,
+                                 lons, lats, 0.)
+    else:
+        points = []
+        for ii in range(len(lons)):
             points.append(Point(lons[ii], lats[ii]))
 
-    if distType == 'hypo':
-        del points
-    else:
         surface = source.surface
 
         if distType == 'rjb':
-            dists = surface.get_joyner_boore_distance(Mesh.from_points_list(points))
+            dists = surface.get_joyner_boore_distance(
+                Mesh.from_points_list(points))
         elif distType == 'ry0':
             dists = surface.get_ry0_distance(Mesh.from_points_list(points))
         elif distType == 'rx':
@@ -1019,8 +1015,8 @@ def get_distances(lons, lats, source, distType='hypo'):
         elif distType == 'rrup':
             dists = surface.get_min_distance(Mesh.from_points_list(points))
         else:
-            print('Wrong distType')
-            exit()
+            raise ValueError('Wrong dist_type. Choose between:'
+                             'hypo, rjb, ry0, rx or rrup.')
 
     dists = num.array(dists)
 

@@ -491,7 +491,7 @@ def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=Fal
     return coords
 
 
-def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, log=False):
+def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log=False):
     # import matplotlib.pyplot as plt
     coords = []
 
