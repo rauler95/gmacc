@@ -162,7 +162,7 @@ def own_correlationcoefficient(x, y):
     import tensorflow.keras.backend as K
     axis = 0
     # N = float(tf.shape(x)[0])
-    N = tf.shape(x)[0]
+    N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
     # nom = (N * num.sum(x*y, axis=axis)) - (num.sum(x, axis=axis) * num.sum(y, axis=axis))
     # den = K.sqrt((tf.multiply(N*K.sum(K.square(x), axis=axis) - K.square(K.sum(x, axis=axis))), (N*K.sum(K.square(y) ,axis=axis) - K.square(K.sum(y, axis=axis)))))
     nom1 = N * K.sum(x * y, axis=axis)
