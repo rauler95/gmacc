@@ -138,33 +138,37 @@ def nn_computation(args, xTrain, yTrain, xTest, yTest, xEval, yEval,
             exit()
 
 
-def correlationcoeff(x, y):
-    ## following equals: 1 - (num.corrcoef(x, y)[0, 1] **2)
-
-    # https://stackoverflow.com/questions/46619869/how-to-specify-the-correlation-coefficient-as-the-loss-function-in-keras
-
-    import tensorflow.keras.backend as K
-    mx = K.mean(x)
-    my = K.mean(y)
-    # mx = x.mean()
-    # my = y.mean()
-    xm, ym = x - mx, y - my
-    r_num = K.sum(tf.multiply(xm, ym))
-    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
-    r = r_num / r_den
-
-    r = K.maximum(K.minimum(r, 1.0), -1.0)
-
-    return r
+def wasserstein_dist(u, v):
+    return tf.reduce_mean(tf.math.reduce_mean(tf.abs(tf.sort(u) - tf.sort(v)), axis=1))
 
 
-def own_correlationcoefficient(x, y):
+def ws_nums(y_true, y_pred, num):
+    import tensorflow.keras.losses as L
+    xs = y_true[:, :num]
+    ys = y_pred[:, :num]
+
+    x = y_true[:, num:]
+    y = y_pred[:, num:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+
+    ws = wasserstein_dist(x, y)
+    return rms + ws * 100
+
+
+def ws1(y_true, y_pred):
+    return ws_nums(y_true, y_pred, 1)
+
+
+def ws3(y_true, y_pred):
+    return ws_nums(y_true, y_pred, 3)
+
+
+def correlationcoefficient(x, y):
     import tensorflow.keras.backend as K
     axis = 0
-    # N = float(tf.shape(x)[0])
     N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
-    # nom = (N * num.sum(x*y, axis=axis)) - (num.sum(x, axis=axis) * num.sum(y, axis=axis))
-    # den = K.sqrt((tf.multiply(N*K.sum(K.square(x), axis=axis) - K.square(K.sum(x, axis=axis))), (N*K.sum(K.square(y) ,axis=axis) - K.square(K.sum(y, axis=axis)))))
     nom1 = N * K.sum(x * y, axis=axis)
     nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
     nom = nom1 - nom2
@@ -189,8 +193,7 @@ def cc_nums(y_true, y_pred, num, fft=False):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
 
-    # r = correlationcoeff(x, y)
-    r = own_correlationcoefficient(x, y)
+    r = correlationcoefficient(x, y)
 
     if fft:
         offset = mse(y_true[:, -1], y_pred[:, -1])
@@ -340,6 +343,10 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = cc1euler_fft
     elif loss == 'cc3euler_fft':
         loss = cc3euler_fft
+    elif loss == 'ws1':
+        loss = ws1
+    elif loss == 'ws3':
+        loss = ws3
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -842,7 +849,8 @@ def load_model(file):
                         'cc3square_fft': cc3square_fft,
                         'cc1euler_fft': cc1euler_fft,
                         'cc3euler_fft': cc3euler_fft,
-                        
+                        'ws1': ws1,
+                        'ws3': ws3,
                         })
 
 
@@ -1577,6 +1585,33 @@ class CombinedCallback(tf.keras.callbacks.Callback):
                     print('\n### Decreasing learning rate from %0.6f to %0.6f' % (self.lr, new_lr))
                 tf.keras.backend.set_value(self.model.optimizer.lr, new_lr)
 
+        ### printing additional info
+        if epoch % self.cancel_patience == 0:
+            # Plot Learning rate and losses in one figure 
+            fig, ax = plt.subplots(figsize=(12, 12))
+            for key in self.lossdict.keys():
+                # if 'loss' in key:
+                #     continue
+                ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+
+            ax.axvline(x=self.best_epoch, color='red', linestyle='--',
+                       label='Best Epoch: %s' % self.best_epoch)
+            ax.set_xlabel('Epoch')
+            ax.set_ylabel('Loss')
+            ax.legend()
+
+            ax2 = ax.twinx()
+            ax2.plot(self.lrs, 'k:', label='Learning rate')
+            ax2.set_ylabel('Learning Rate')
+            # ax2.legend()
+
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig('%s/loss-learning_rate-epoch.png' % (self.outputdir))
+            plt.close('all')
+            
+            self.model.save('%s/pre_model.h5' % (self.outputdir), include_optimizer=True)
+
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0:
             print("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
@@ -1595,7 +1630,6 @@ class CombinedCallback(tf.keras.callbacks.Callback):
         ax.legend()
 
         ax2 = ax.twinx()
-
         ax2.plot(self.lrs, 'k:', label='Learning rate')
         ax2.set_ylabel('Learning Rate')
         # ax2.legend()

@@ -4,11 +4,48 @@ import random
 from pyrocko import orthodrome
 from pyrocko import moment_tensor as pmt
 
-
 import gmacc.gmeval.sources as GMs
-#### 
-# Read in ensemble file
-####
+
+###
+# Loss functions
+###
+
+
+def get_rms(a, b, axis=0):
+    return num.sqrt(num.mean((a - b)**2, axis=axis))
+
+
+def get_rms_df(a, b):
+    a = a.to_numpy()
+    b = b.to_numpy()
+    return get_rms(a, b, axis=1)
+
+
+def get_cc(a, b):
+    return num.corrcoef(a, b)[0, 1]
+
+
+def get_cc_df(x, y, axis=0):
+
+    x = x.T.to_numpy()
+    y = y.T.to_numpy()
+
+    N = len(x)
+    nom = (N * num.sum(x * y, axis=axis)) - (num.sum(x, axis=axis) * num.sum(y, axis=axis))
+    den = num.sqrt((N * num.sum(x**2, axis=axis) - num.sum(x, axis=axis)**2) * (N * num.sum(y**2, axis=axis) - num.sum(y, axis=axis)**2))
+    r = nom / den
+
+    return r
+
+
+def get_wasserstein_dist(a, b):
+    import scipy as sp
+    return sp.stats.wasserstein_distance(a, b)
+
+
+def get_wasserstein_dist_df(u, v, p=1):
+    assert len(u) == len(v)
+    return num.mean(num.abs(num.sort(u) - num.sort(v))**p, axis=1)**(1 / p)
 
 
 ###############
@@ -296,6 +333,7 @@ def calc_rise_time(source=None, mag=None, fac=0.8):
 
     return riseTime
 
+
 #############################
 '''
 Mapping functions
@@ -303,6 +341,8 @@ Mapping functions
 Create grid coordinates around the (Hypo)center of the given source.
 '''
 #############################
+
+
 def quasirandom_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.0, rmax=num.inf):
     import chaospy as cpy
 

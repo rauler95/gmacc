@@ -32,6 +32,8 @@ def owncolorbar(mappable, fig, ax, label=[], ticks=[], side='right'):
         cbar.ax.yaxis.set_ticks_position('left')
         cbar.ax.yaxis.set_label_position('left')
 
+    cbar.ax.tick_params(labelsize=15) 
+
     return
 
 
@@ -566,9 +568,13 @@ def plot_gm_map_alternative(source, predDict, obsDict=[], resDict=[], mapextent=
             if compCnt == 0:
                 if obsDict:
                     # ax.set_title('%s vs %s_obs' % (comp, obsComp), fontsize=30)
-                    ax.set_title('%s' % (comp), fontsize=30)
+                    ax.set_title('%s' % (comp))#, fontsize=30)
                 else:
-                    ax.set_title('%s' % (comp), fontsize=30)
+                    ax.set_title('%s' % (comp))#, fontsize=30)
+
+            items = [ax.title, ax.xaxis.label, ax.yaxis.label]
+            for item in (items):
+                item.set_fontsize(figtitlesize)
 
             fig.add_subplot(ax)
             if plotindi:
@@ -1014,7 +1020,6 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
         n = -1
         for comp, vals in gmParams.items():
             n += 1
-
             if obsCont:
                 if comp in obsDict[list(obsDict.keys())[0]]:
                     obsComp = comp
@@ -1151,18 +1156,18 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
             if compCnt + 1 == len(predDict) or plotgmvise or plotindi:
                 m.drawmeridians(mers,
-                                labels=[0, 0, 0, 1])  # , rotation=90.)
+                                labels=[0, 0, 0, 1], fontsize=15)  # , rotation=90.)
             else:
                 m.drawmeridians(mers,
-                                labels=[0, 0, 0, 0])
+                                labels=[0, 0, 0, 0], fontsize=15)
 
             if n == 0:
                 m.drawparallels(paras,
-                                labels=[1, 0, 0, 0], rotation=90.)
+                                labels=[1, 0, 0, 0], rotation=90., fontsize=15)
                 ax.set_ylabel(str(gm).upper(), labelpad=25)
             else:
                 m.drawparallels(paras,
-                                labels=[0, 0, 0, 0])
+                                labels=[0, 0, 0, 0], fontsize=15)
 
             '''
             Plotting source
@@ -1252,11 +1257,10 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     plt.clabel(cs, list(set(data)), fmt='%1.1f')
 
             elif predPlotMode in ['tiles']:
-
-                cs = None
+                print('HEREEE')
                 cs = m.scatter(x, y, s=0, c=data,
                             cmap=cmap, alpha=alpha,
-                            zorder=-2000.,
+                            zorder=-2000., edgecolor='white',
                             vmin=shmLevels.min(), vmax=shmLevels.max())
                 
                 for ii in range(len(lons)):
@@ -1264,9 +1268,14 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     x2, y2 = m(lons[ii] + dLon / 2, lats[ii] + dLat / 2)
                     xdist = abs(x2 - x1)
                     ydist = abs(y2 - y1)
-
-                    rect = patches.Rectangle((x1, y1), xdist, ydist,
-                                        linewidth=1, color=cmap(norm(data[ii])))
+                    if ii == 0:
+                        rect = patches.Rectangle((x1, y1), xdist, ydist, 
+                                label='Prediction', linewidth=1,
+                                color=cmap(norm(data[ii])))
+                    else:
+                        rect = patches.Rectangle((x1, y1), xdist, ydist, 
+                                linewidth=1,
+                                color=cmap(norm(data[ii])))
                     ax.add_patch(rect)
     
             elif predPlotMode in ['tri', 'area']:
@@ -1287,8 +1296,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         cs = plt.tricontourf(x, y, data, extend='both',
                                 cmap=cmap, alpha=alpha,
                                 levels=shmLevels,
-                                vmin=shmLevels.min(), vmax=shmLevels.max()
-                                )
+                                vmin=shmLevels.min(), vmax=shmLevels.max())
                 except ValueError as e:
                     print(e)
                     print('Error in:', gm, comp)
@@ -1430,6 +1438,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                                         side='right')
 
                     else:
+                        print('ÄÄÄÄÄÄ')
                         # size = ((num.abs(residuum) + 0.1) * 300.)
                         # size = 4**(num.abs(residuum) + 3.)
                         maxsize = markersize * 1.25
@@ -1442,7 +1451,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         sc = m.scatter(refx, refy,
                                 # s=markersize,
                                 s=size,
-                                c=residuum,
+                                c=residuum, edgecolor='black',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -1461,7 +1470,11 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     refx, refy = m(obsLon, obsLat)
                     m.scatter(refx, refy, s=markersize, c=obsData,
                             cmap=cmap, zorder=20.,  # alpha=0.1,
-                            edgecolor='white', linewidth=1,
+                            edgecolor='black', linewidth=1,
+                            vmin=shmLevels.min(), vmax=shmLevels.max())
+                    m.scatter(refx[0], refy[0], s=markersize/10., c=['white'],
+                            cmap=cmap, zorder=-1000.,  # alpha=0.1,
+                            edgecolor='black', linewidth=1, label='Observation',
                             vmin=shmLevels.min(), vmax=shmLevels.max())
             if figtitle is None:
                 titlestr = '%s' % (source.name)
@@ -1505,8 +1518,9 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
             fig.add_subplot(ax)
             if plotindi:
-                plt.suptitle(titlestr)
+                plt.suptitle(titlestr, fontsize=fontsize)
                 plt.tight_layout()
+                plt.legend()
                 if savename != [] and savename != '':
                     fig.savefig('%s_%s_%s.png' % (savename, gm, comp))
 
