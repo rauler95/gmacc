@@ -165,20 +165,60 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
+def cc_test(x, y):
+    axis = 0
+    import tensorflow.keras.backend as K
+
+    mx = K.mean(x)
+    my = K.mean(y)
+    # mx = x.mean()
+    # my = y.mean()
+    xm, ym = x - mx, y - my
+    r_num = K.sum(tf.multiply(xm, ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
+    r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    # N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
+    # nom1 = N * K.sum(x * y, axis=axis)
+    # nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
+    # nom = nom1 - nom2
+    # den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
+    # den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
+    # den = K.sqrt(tf.multiply(den1, den2))
+
+    # r = nom / den
+    # r = K.mean(r)
+    # r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    return 1-r
+
+
 def correlationcoefficient(x, y):
     import tensorflow.keras.backend as K
-    axis = 0
-    N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
-    nom1 = N * K.sum(x * y, axis=axis)
-    nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
-    nom = nom1 - nom2
-    den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
-    den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
-    den = K.sqrt(tf.multiply(den1, den2))
+    # axis = 0
+    # N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
+    # nom1 = N * K.sum(x * y, axis=axis)
+    # nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
+    # nom = nom1 - nom2
+    # den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
+    # den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
+    # den = K.sqrt(tf.multiply(den1, den2))
 
-    r = nom / den
-    r = K.mean(r)
+    # r = nom / den
+    # r = K.mean(r)
+    # r = K.maximum(K.minimum(r, 1.0), -1.0)
+
+    mx = K.mean(x)
+    my = K.mean(y)
+    # mx = x.mean()
+    # my = y.mean()
+    xm, ym = x - mx, y - my
+    r_num = K.sum(tf.multiply(xm, ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    r = r_num / r_den
     r = K.maximum(K.minimum(r, 1.0), -1.0)
+    
     return r
 
 
@@ -347,6 +387,8 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = ws1
     elif loss == 'ws3':
         loss = ws3
+    elif loss == 'cc_test':
+        loss = cc_test
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -851,6 +893,7 @@ def load_model(file):
                         'cc3euler_fft': cc3euler_fft,
                         'ws1': ws1,
                         'ws3': ws3,
+                        'cc_test': cc_test,
                         })
 
 

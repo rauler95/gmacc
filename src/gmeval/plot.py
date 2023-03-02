@@ -32,7 +32,7 @@ def owncolorbar(mappable, fig, ax, label=[], ticks=[], side='right'):
         cbar.ax.yaxis.set_ticks_position('left')
         cbar.ax.yaxis.set_label_position('left')
 
-    cbar.ax.tick_params(labelsize=15) 
+    cbar.ax.tick_params(labelsize=10) 
 
     return
 
@@ -1154,20 +1154,22 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         num.round(source.lat, roundval),
                         num.round(upperLat - dLat, roundval)]
 
+            # coordfontsize = 15
+            coordfontsize = 10
             if compCnt + 1 == len(predDict) or plotgmvise or plotindi:
                 m.drawmeridians(mers,
-                                labels=[0, 0, 0, 1], fontsize=15)  # , rotation=90.)
+                                labels=[0, 0, 0, 1], fontsize=coordfontsize)  # , rotation=90.)
             else:
                 m.drawmeridians(mers,
-                                labels=[0, 0, 0, 0], fontsize=15)
+                                labels=[0, 0, 0, 0], fontsize=coordfontsize)
 
             if n == 0:
                 m.drawparallels(paras,
-                                labels=[1, 0, 0, 0], rotation=90., fontsize=15)
+                                labels=[1, 0, 0, 0], rotation=90., fontsize=coordfontsize)
                 ax.set_ylabel(str(gm).upper(), labelpad=25)
             else:
                 m.drawparallels(paras,
-                                labels=[0, 0, 0, 0], fontsize=15)
+                                labels=[0, 0, 0, 0], fontsize=coordfontsize)
 
             '''
             Plotting source
@@ -1451,7 +1453,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         sc = m.scatter(refx, refy,
                                 # s=markersize,
                                 s=size,
-                                c=residuum, edgecolor='black',
+                                c=residuum, 
+                                #edgecolor='black',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -1513,6 +1516,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
             # items = [ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
             items = [ax.title, ax.xaxis.label, ax.yaxis.label]
+            # items = [ax.title]
             for item in (items):
                 item.set_fontsize(fontsize)
 
