@@ -166,59 +166,44 @@ def ws3(y_true, y_pred):
 
 
 def cc_test(x, y):
-    axis = 0
     import tensorflow.keras.backend as K
+    # print(x)
+    x = tf.convert_to_tensor(x, dtype=tf.float64)
+    y = tf.convert_to_tensor(y, dtype=tf.float64)
+    print(x)
 
-    mx = K.mean(x)
-    my = K.mean(y)
-    # mx = x.mean()
-    # my = y.mean()
-    xm, ym = x - mx, y - my
-    r_num = K.sum(tf.multiply(xm, ym))
-    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
-    r = r_num / r_den
+    axis = 1
+    N = tf.cast(tf.shape(x)[0], dtype=tf.float64)
+    nom1 = N * K.sum(x * y, axis=axis)
+    nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
+    nom = nom1 - nom2
+    print(nom)
+    den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
+    den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
+    den = K.sqrt(tf.multiply(den1, den2))
+    print(den)
+
+    r = nom / den
+    print(r)
+    # r = K.mean(r)
+    r = tf.reduce_mean(r)
+    print(r)
     r = K.maximum(K.minimum(r, 1.0), -1.0)
 
-    # N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
-    # nom1 = N * K.sum(x * y, axis=axis)
-    # nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
-    # nom = nom1 - nom2
-    # den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
-    # den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
-    # den = K.sqrt(tf.multiply(den1, den2))
-
-    # r = nom / den
-    # r = K.mean(r)
-    # r = K.maximum(K.minimum(r, 1.0), -1.0)
-
-    return 1-r
+    return r
 
 
 def correlationcoefficient(x, y):
     import tensorflow.keras.backend as K
-    # axis = 0
-    # N = tf.cast(tf.shape(x)[0], dtype=tf.float32)
-    # nom1 = N * K.sum(x * y, axis=axis)
-    # nom2 = tf.multiply(K.sum(x, axis=axis), K.sum(y, axis=axis))
-    # nom = nom1 - nom2
-    # den1 = N * K.sum(x**2, axis=axis) - K.sum(x, axis=axis)**2
-    # den2 = N * K.sum(y**2, axis=axis) - K.sum(y, axis=axis)**2
-    # den = K.sqrt(tf.multiply(den1, den2))
-
-    # r = nom / den
-    # r = K.mean(r)
-    # r = K.maximum(K.minimum(r, 1.0), -1.0)
 
     mx = K.mean(x)
     my = K.mean(y)
-    # mx = x.mean()
-    # my = y.mean()
     xm, ym = x - mx, y - my
     r_num = K.sum(tf.multiply(xm, ym))
     r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
     r = r_num / r_den
     r = K.maximum(K.minimum(r, 1.0), -1.0)
-    
+
     return r
 
 
