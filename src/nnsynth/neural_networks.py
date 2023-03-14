@@ -142,13 +142,13 @@ def wasserstein_dist(u, v):
     return tf.reduce_mean(tf.math.reduce_mean(tf.abs(tf.sort(u) - tf.sort(v)), axis=1))
 
 
-def ws_nums(y_true, y_pred, num):
+def ws_nums(y_true, y_pred, numb):
     import tensorflow.keras.losses as L
-    xs = y_true[:, :num]
-    ys = y_pred[:, :num]
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
 
-    x = y_true[:, num:]
-    y = y_pred[:, num:]
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -163,6 +163,27 @@ def ws1(y_true, y_pred):
 
 def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
+
+
+def rmscc(y_true, y_pred):
+    import tensorflow.keras.losses as L
+    numb = 3
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    wvrms = mse(x, y)
+
+    r = correlationcoefficient(x, y)
+    cc = (1 - r)**2
+
+    e = (10 * cc) + rms + wvrms
+
+    return e
 
 
 def cc_test(x, y):
@@ -207,13 +228,13 @@ def correlationcoefficient(x, y):
     return r
 
 
-def cc_nums(y_true, y_pred, num, fft=False):
+def cc_nums(y_true, y_pred, numb, fft=False):
     import tensorflow.keras.losses as L
-    xs = y_true[:, :num]
-    ys = y_pred[:, :num]
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
 
-    x = y_true[:, num:]
-    y = y_pred[:, num:]
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -223,7 +244,7 @@ def cc_nums(y_true, y_pred, num, fft=False):
     if fft:
         offset = mse(y_true[:, -1], y_pred[:, -1])
     else:
-        offset = mse(y_true[:, num], y_pred[:, num])
+        offset = mse(y_true[:, numb], y_pred[:, numb])
 
     amplitude = tf.math.abs(tf.math.reduce_max(x) - tf.math.reduce_max(y))
 
@@ -232,11 +253,11 @@ def cc_nums(y_true, y_pred, num, fft=False):
     return rms, r, misc
 
 
-def ccsquare(y_true, y_pred, num, fft=False):
+def ccsquare(y_true, y_pred, numb, fft=False):
     '''
-    At the moment the first 'num' values are assumed to be non-waveform
+    At the moment the first 'numb' values are assumed to be non-waveform
     '''
-    rms, r, misc = cc_nums(y_true, y_pred, num, fft)
+    rms, r, misc = cc_nums(y_true, y_pred, numb, fft)
 
     cc = (1 - r)**2
 
@@ -259,11 +280,11 @@ def cc3square_fft(y_true, y_pred):
     return ccsquare(y_true, y_pred, 3, fft=True)
 
 
-def cceuler(y_true, y_pred, num, fft=False):
+def cceuler(y_true, y_pred, numb, fft=False):
     '''
-    At the moment the first 'num' values are assumed to be non-waveform
+    At the moment the first 'numb' values are assumed to be non-waveform
     '''
-    rms, r, misc = cc_nums(y_true, y_pred, num, fft)
+    rms, r, misc = cc_nums(y_true, y_pred, numb, fft)
     cc = tf.math.exp(1.0) - tf.math.exp(r)
 
     return cc + rms + misc
@@ -374,6 +395,8 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = ws3
     elif loss == 'cc_test':
         loss = cc_test
+    elif loss == 'rmscc':
+        loss = rmscc
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -879,6 +902,7 @@ def load_model(file):
                         'ws1': ws1,
                         'ws3': ws3,
                         'cc_test': cc_test,
+                        'rmscc': rmscc,
                         })
 
 
