@@ -53,7 +53,8 @@ def nn_waveform_plots_time(predDF, yEval, outputdir):
     for mm, row in predDF.iterrows():
 
         pred = predDF.iloc[mm]
-        # pred /= max(pred)
+        # pred -= pred[cntstart]
+        # pred /= max(abs(pred))
         true = yEval.iloc[mm]
 
         # plt.figure(figsize=(8, 5))

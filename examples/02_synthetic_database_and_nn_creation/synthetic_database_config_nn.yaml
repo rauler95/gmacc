@@ -5,7 +5,7 @@ outdir: 'example_data/MT/1_pgd/nn/'
 # outdir: 'example_data/RS/1_pgd/'
 # outdir: 'example_data/RS/1_pgd/nn/'
 maxepochnum: 100
-minepochnum: 1
+minepochnum: 50
 validepochnum: 10
 device: 'cpu'
 targetmode: 'multi'
@@ -14,4 +14,4 @@ activations: ['elu']
 optimizers: ['adam']
 learningtypes: ['default']
 batchsizes: [0.1]
-hiddenlayers: [[10, 10], ['5n','5n']]
+hiddenlayers: [[100, 100], [10, 10], ['5n','5n']]
