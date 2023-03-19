@@ -1035,7 +1035,7 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', ylabel='Difference',
         plt.axhline(-0.5 * axhline, color='black', linestyle=':')
         plt.axhline(0 * axhline, color='black', linestyle='-', alpha=0.25, zorder=-2)
     else:
-        plt.grid('both')
+        plt.grid('both', axis='y')
     plt.ylim((ymin, ymax))
     plt.xticks(rotation='60')
     plt.legend()
@@ -1662,7 +1662,8 @@ class CombinedCallback(tf.keras.callbacks.Callback):
             plt.savefig('%s/loss-learning_rate-epoch.png' % (self.outputdir))
             plt.close('all')
             
-            self.model.save('%s/pre_model.h5' % (self.outputdir), include_optimizer=True)
+            # self.model.save('%s/pre_model.h5' % (self.outputdir), include_optimizer=True)
+            self.model.save('%s/%s_model.h5' % (self.outputdir, epoch), include_optimizer=True)
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0:

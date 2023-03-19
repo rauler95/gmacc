@@ -190,11 +190,18 @@ def plot_gm_map_alternative(source, predDict, obsDict=[], resDict=[], mapextent=
 
             dLat = abs((lowerLat - upperLat) / (len(set(lats)) - 1))
             dLon = abs((lowerLon - upperLon) / (len(set(lons)) - 1))
+            try:
+                m = basemap.Basemap(projection='gall', ax=ax,
+                                    llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
+                                    llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
+                                    resolution='h', epsg=3857)  # 1 - 4326, 2 - 3857
+            except OSError as e:
+                print(e)
+                m = basemap.Basemap(projection='gall', ax=ax,
+                                    llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
+                                    llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
+                                    resolution='l', epsg=3857)  # 1 - 4326, 2 - 3857
 
-            m = basemap.Basemap(projection='gall', ax=ax,
-                                llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
-                                llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
-                                resolution='h', epsg=3857)  # 1 - 4326, 2 - 3857
             try:
                 m.drawcoastlines()
             except ValueError as e:
@@ -1259,7 +1266,6 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     plt.clabel(cs, list(set(data)), fmt='%1.1f')
 
             elif predPlotMode in ['tiles']:
-                print('HEREEE')
                 cs = m.scatter(x, y, s=0, c=data,
                             cmap=cmap, alpha=alpha,
                             zorder=-2000., edgecolor='white',
@@ -1440,7 +1446,6 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                                         side='right')
 
                     else:
-                        print('ÄÄÄÄÄÄ')
                         # size = ((num.abs(residuum) + 0.1) * 300.)
                         # size = 4**(num.abs(residuum) + 3.)
                         maxsize = markersize * 1.25

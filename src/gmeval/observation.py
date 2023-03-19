@@ -467,11 +467,13 @@ class StationContainerObservation(StationContainer):
                     # tr = trace_baseline_correction(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
                     # plt.suptitle('Correction on Disp')
                     tr = trace_baseline_correction2(tr, vtr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                    plt.suptitle('Correction on Disp2 !!!!!!!!!!!!!!')
+                    if plot:
+                        plt.suptitle('Correction on Disp2 !!!!!!!!!!!!!!')
                 if mode == 'ebasco':
                     tr = trace_baseline_correction_ebasco(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
                     # tr = trace_baseline_correction_ebasco_own(atr, comp, idx1, idx2, idx3, axes, tilt, plot=plot)
-                    plt.suptitle('Correction: eBASCO')
+                    if plot:
+                        plt.suptitle('Correction: eBASCO')
 
                 if plot:
                     for axidx in [0, 1, 2, -3, -2, -1]:
@@ -536,18 +538,36 @@ class StationContainerObservation(StationContainer):
 
     def convert_to_ZNE(self, E=None, N=None, Z=None):
         for sta in self.stations:
+
+            eflag = False
+            nflag = False
+            zflag = False
             for comp in self.stations[sta].components.keys():
+
                 if comp == E and E and 'E' not in self.stations[sta].components:
-                    self.stations[sta].components['E'] = self.stations[sta].components[E]
-                    del self.stations[sta].components[E]
+                    # self.stations[sta].components['E'] = self.stations[sta].components[E]
+                    # del self.stations[sta].components[E]
+                    eflag = True
 
                 if comp == N and N and 'N' not in self.stations[sta].components:
-                    self.stations[sta].components['N'] = self.stations[sta].components[N]
-                    del self.stations[sta].components[N]
+                    # self.stations[sta].components['N'] = self.stations[sta].components[N]
+                    # del self.stations[sta].components[N]
+                    nflag = True
 
                 if comp == Z and Z and 'Z' not in self.stations[sta].components:
-                    self.stations[sta].components['Z'] = self.stations[sta].components[Z]
-                    del self.stations[sta].components[Z]
+                    # self.stations[sta].components['Z'] = self.stations[sta].components[Z]
+                    # del self.stations[sta].components[Z]
+                    zflag = True
+
+            if eflag:
+                self.stations[sta].components['E'] = self.stations[sta].components[E]
+                del self.stations[sta].components[E]
+            if nflag:
+                self.stations[sta].components['N'] = self.stations[sta].components[N]
+                del self.stations[sta].components[N]
+            if zflag:
+                self.stations[sta].components['Z'] = self.stations[sta].components[Z]
+                del self.stations[sta].components[Z]
 
             for comp in ['0', '1', '2']:
                 if comp in self.stations[sta].components:
