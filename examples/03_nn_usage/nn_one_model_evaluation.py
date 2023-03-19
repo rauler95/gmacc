@@ -7,8 +7,7 @@ import gmacc.nnsynth.preprocessing as GMpre
 args = config.NeuralNetwork(config_path='newsamples_nn_config.yaml').get_config()
 print(args)
 
-xEval, yEval, scalingDict, targets, inputcols = GMpre.read_evaluation_data('%s/%s' % (args.indir, args.filecore))
-
+xEval, yEval, scalingDict, targets, inputcols = GMpre.read_subsets_eval('%s/%s' % (args.indir, args.filecore), filetype='pkl')
 model = GMnn.load_model(args.modeldir + '/MODEL.h5')
 
 print(model)
