@@ -103,6 +103,7 @@ for coords, mode in zip(coordinates, ['map', '1D']):
     pyrockoCont = GMobs.get_pyrocko_container(source, coords,
                                 args.comps, args.imts, args.freqs,
                                 args.filterfrequencies, delete=False,
+                                gfpath=args.gf,
                                 deleteWvData=deletewf, resample_f=20)
 
     print(mode, len(coords), time.time() - t1, (time.time() - t1) / len(coords))
