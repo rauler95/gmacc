@@ -5,6 +5,7 @@
 /src/gmacc.egg-info/
 
 /examples/02_synthetic_database_and_nn_creation/example_data/
+.env/
 
 *output/
 
@@ -24,3 +25,4 @@ __pycache__/
 *.log
 *.err_log
 .vagrant
+
