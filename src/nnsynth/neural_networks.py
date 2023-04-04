@@ -989,7 +989,7 @@ def boxplot(diffs, positions, labels, outdir, xlabel='', ylabel='Difference', fi
     plt.axhline(0, color='black', linestyle='-', alpha=0.25, zorder=-2)
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
-    plt.xticks(rotation='60')
+    plt.xticks(rotation=60)
     plt.tight_layout()
     plt.savefig('%s/%sboxplot.png' % (outdir, fileprefix))
 
@@ -1037,7 +1037,7 @@ def violinplot(diffs, positions, labels, outdir, xlabel='', ylabel='Difference',
     else:
         plt.grid('both', axis='y')
     plt.ylim((ymin, ymax))
-    plt.xticks(rotation='60')
+    plt.xticks(rotation=60)
     plt.legend()
     plt.tight_layout()
     plt.savefig('%s/%sviolinplot.png' % (outdir, fileprefix))
@@ -1364,7 +1364,7 @@ def plot_low2high_ampspectra(model, targets, scalingDict, outdir, xTrain, yTrain
             # ax.scatter(lowxs, lowys, color='black', linestyle=':', marker='v', label='Lowf values') # if nn == 0 else None)
             ax.set_ylabel('%s Amplitude\nDifference [log 10]' % (cha))
         ax.legend()
-        plt.xticks(rotation='60')
+        plt.xticks(rotation=60)
         plt.tight_layout()
         plt.savefig('%s/spectra_%s.png' % (outdir, nn))
         plt.close('all')

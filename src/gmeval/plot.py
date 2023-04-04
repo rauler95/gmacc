@@ -1128,11 +1128,18 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
             dLat = abs((lowerLat - upperLat) / (len(set(lats)) - 1))
             dLon = abs((lowerLon - upperLon) / (len(set(lons)) - 1))
-
-            m = basemap.Basemap(projection='gall', ax=ax,
+            try:
+                m = basemap.Basemap(projection='gall', ax=ax,
                                 llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
                                 llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
                                 resolution='h', epsg=3857)  # 1 - 4326, 2 - 3857
+            except OSError as e:
+                print(e)
+                m = basemap.Basemap(projection='gall', ax=ax,
+                                llcrnrlat=lowerLat - (dLat / 2), urcrnrlat=upperLat + (dLat / 2),
+                                llcrnrlon=lowerLon - (dLon / 2), urcrnrlon=upperLon + (dLon / 2),
+                                resolution='l', epsg=3857)  # 1 - 4326, 2 - 3857
+
             try:
                 m.drawcoastlines()
             except ValueError as e:

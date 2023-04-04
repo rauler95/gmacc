@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 packname = 'gmacc'
-version = '2022.04.28'
+version = '2023.04.04'
 
 packages = ['%s' % packname]
 packs = find_packages(where="src")
@@ -13,8 +13,8 @@ for p in packs:
     packages.append('%s.%s' % (packname, p))
 
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+# with open("README.md", "r", encoding="utf-8") as fh:
+#     long_description = fh.read()
 
 
 class CustomInstallCommand(install):
@@ -28,7 +28,7 @@ setup(
     author='luklehma',
     author_email='luklehma@uni-potsdam.de',
     description='Support Package for the Publication "xxxx".',
-    long_description=long_description,
+    # long_description=long_description,
     long_description_content_type="text/markdown",
     url="xxx",
     project_urls={
