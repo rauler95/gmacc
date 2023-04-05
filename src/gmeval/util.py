@@ -519,7 +519,7 @@ def random_circular_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log
     return coords
 
 
-def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log=False):
+def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=False):
 
     if source.form == 'point':
         coords = downsampling_MT_mapping(source, mapextent=mapextent,
@@ -531,7 +531,7 @@ def downsampling_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log=Fa
     return coords
 
 
-def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log=False):
+def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=False):
     # import matplotlib.pyplot as plt
     coords = []
 
@@ -649,7 +649,7 @@ def downsampling_RS_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log
     return coords
 
 
-def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.01, log=False):
+def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log=False):
     coords = []
 
     if source.form == 'point':

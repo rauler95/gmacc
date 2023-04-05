@@ -178,6 +178,9 @@ def calculate_wv(ii, args, mapextent, ncords, mapping):
     elif mapping == 'random_circular':
         mapCoords = GMu.random_circular_mapping(source, mapextent,
                                                 ncords, rmin=0.05)
+    elif mapping == 'downsampling':
+        mapCoords = GMu.downsampling_mapping(source,
+            mapextent=mapextent, ncoords=ncords, log=True)
     elif mapping == 'mixed':
         rng = num.random.rand(1)[0]
         threshold = 0.85
