@@ -165,9 +165,8 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
-def rmscc(y_true, y_pred):
+def rmscc(y_true, y_pred, numb):
     import tensorflow.keras.losses as L
-    numb = 3
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
 
@@ -184,6 +183,18 @@ def rmscc(y_true, y_pred):
     e = (10 * cc) + rms + wvrms
 
     return e
+
+
+def rmscc1(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1)
+
+
+def rmscc2(y_true, y_pred):
+    return rmscc(y_true, y_pred, 2)
+
+
+def rmscc3(y_true, y_pred):
+    return rmscc(y_true, y_pred, 3)
 
 
 def cc_test(x, y):
@@ -395,8 +406,12 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = ws3
     elif loss == 'cc_test':
         loss = cc_test
-    elif loss == 'rmscc':
-        loss = rmscc
+    elif loss == 'rmscc1':
+        loss = rmscc1
+    elif loss == 'rmscc2':
+        loss = rmscc2
+    elif loss == 'rmscc3':
+        loss = rmscc3
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -902,7 +917,9 @@ def load_model(file):
                         'ws1': ws1,
                         'ws3': ws3,
                         'cc_test': cc_test,
-                        'rmscc': rmscc,
+                        'rmscc1': rmscc1,
+                        'rmscc2': rmscc2,
+                        'rmscc3': rmscc3,
                         })
 
 

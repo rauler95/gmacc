@@ -289,6 +289,28 @@ class SyntheticDatabase(GroundMotionData):
         return config
 
 
+class SyntheticDatabaseWaveform(SyntheticDatabase):
+    timecut = List.T(
+        Int.T(),
+        default=[-40, 190],
+        help='Timing to cut the waveform, in regard to the source time in seconds.')
+
+
+class Preprocessing(ModuleConfig):
+    pass
+
+
+class PreprocessingWaveform(Preprocessing):
+    mode = StringChoice.T(
+        default='time',
+        choices=['time', 'freq'],
+        help='Mode in which domain the waveform is processed to - either in time or frequency domain')
+
+    numsign = Int.T(
+        default=1,
+        help='Number of how many output parameter refer to the sign of the waveform. Either 0, 1 or 2.')
+
+
 class ObservationalData(GroundMotionData):
 
     eqname = String.T(

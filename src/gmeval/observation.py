@@ -948,15 +948,16 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
             pyrockoSource.update(stf=stf)
 
     if timecut:
-        tmin = source.time - 40
-        tmax = source.time + 190
-        print('TimeCut:', tmax - tmin, tmin, tmax)
+        tmin = source.time + timecut[0] - 5
+        tmax = source.time + timecut[1] + 5
+        # print('TimeCut:', tmax - tmin, tmin, tmax)
 
         waveform_targets = [gf.Target(quantity='displacement',
                                 lat=coords[ii][1], lon=coords[ii][0],
                                 store_id=str(gfPath.rsplit('/')[-2]),
                                 tmin=tmin,
                                 tmax=tmax,
+                                interpolation='multilinear',  # interpolation
                                 codes=('PR', 'S' + str(ii),
                                     '00', channel_code))
                         for channel_code in chaCodes
@@ -965,6 +966,7 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
         waveform_targets = [gf.Target(quantity='displacement',
                                 lat=coords[ii][1], lon=coords[ii][0],
                                 store_id=str(gfPath.rsplit('/')[-2]),
+                                interpolation='multilinear',  # interpolation
                                 codes=('PR', 'S' + str(ii),
                                     '00', channel_code))
                         for channel_code in chaCodes
@@ -977,7 +979,7 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
 
     if timecut:
         for tr in synthetic_traces:
-            tr.chop(tmin=tmin + 10, tmax=tmax - 10)
+            tr.chop(tmin=tmin + 5, tmax=tmax - 5, include_last=True)
 
     # print('Finished Pyrocko-WV')
 
@@ -991,8 +993,6 @@ def create_synthetic_waveform(gfPath, source, coords, stf=None, timecut=False,
 
     return synthetic_traces, waveform_targets
 
-###
-# ---
 ###
 def create_stationdict_with_traces(traces, locDict):
     staDict = {}
@@ -1267,7 +1267,7 @@ def convert_surface(source, surface):
 ###
 #
 ###
-def get_pyrocko_container(source, coords, pyrockoChas, imts, freqs, filterfreq=None,
+def get_pyrocko_container(source, coords, pyrockoChas, imts=['pga'], freqs=[], filterfreq=None,
                         H2=True, delete=False, deleteWvData=False, resample_f=None,
                         gfpath='/home/lehmann/dr/pyrocko_gf/own_2hz_dist_b/',
                         rupture_duration_mode='uncertain',

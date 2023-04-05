@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 packname = 'gmacc'
-version = '2023.04.04'
+version = '2023.4.4'
 
 packages = ['%s' % packname]
 packs = find_packages(where="src")

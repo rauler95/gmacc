@@ -57,14 +57,10 @@ def nn_waveform_plots_time(predDF, yEval, outputdir):
         # pred /= max(abs(pred))
         true = yEval.iloc[mm]
 
-        # plt.figure(figsize=(8, 5))
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12,10))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
         xvals = range(len(pred) - cntstart)
-        # ax1.axhline(1, color='black', alpha=0.3)
-        # ax1.axhline(-1, color='black', alpha=0.3)
         ax1.plot(xvals, pred[cntstart:], label='NN Predicted')
         ax1.plot(xvals, true[cntstart:], label='GF Ouput')
-        # ax1.set_ylim(-1, 1)
         ax1.legend(loc='best')
 
         titlestr = str(mm)
@@ -97,6 +93,10 @@ def nn_waveform_plots_time(predDF, yEval, outputdir):
                 trMaxtrue *= 1
             else:
                 trMaxtrue *= -1
+
+        elif 'maxval-sign' in yEval:
+            trMaxpred *= num.sign(pred[1])
+            trMaxtrue *= num.sign(true[1])
 
         ax2.plot(xvals, trMaxpred * pred[cntstart:], label='NN Predicted')
         ax2.plot(xvals, trMaxtrue * true[cntstart:], label='GF Ouput')
@@ -200,51 +200,69 @@ def nn_waveform_plots_freq(predDF, yEval, outputdir):
 
 def evaluate_waveform_general(predDF, yEval, outputdir, predirectory=True, plot=True):
 
+    valslist = []
+    labelslist = []
     cntstart = 0
     if 'maxval' in yEval:
         cntstart += 1
+        maxrmss = predDF.iloc[:, 0].values - yEval.iloc[:, 0].values
+        valslist.append(maxrmss)
+        labelslist.append('maxval RMS')
 
-    if 'maxval-sign' in yEval:
-        cntstart += 1
-
-    elif 'maxval-sign-pos' in yEval:
+    if 'maxval-sign-pos' in yEval:
         cntstart += 2
 
-    maxrmss = num.abs(predDF.iloc[:, 0].values - yEval.iloc[:, 0].values)
-    signrms1s = num.abs(predDF.iloc[:, 1].values - yEval.iloc[:, 1].values)
-    signrms2s = num.abs(predDF.iloc[:, 2].values - yEval.iloc[:, 2].values)
+        signrms1s = predDF.iloc[:, 1].values - yEval.iloc[:, 1].values
+        signrms2s = predDF.iloc[:, 2].values - yEval.iloc[:, 2].values
+        valslist.append(signrms1s)
+        labelslist.append('sign1 RMS')
+        valslist.append(signrms2s)
+        labelslist.append('sign2 RMS')
+
+    elif 'maxval-sign' in yEval:
+        cntstart += 1
+        signrmss = predDF.iloc[:, 1].values - yEval.iloc[:, 1].values
+        valslist.append(signrmss)
+        labelslist.append('sign RMS')
     
     x = predDF.iloc[:, cntstart:]
     y = yEval.iloc[:, cntstart:]
 
     rmss = GMu.get_rms_df(x, y)
+    valslist.append(rmss)
+    labelslist.append('RMS')
+
     ccs = 1 - GMu.get_cc_df(x, y)
-    # wss = GMu.get_wasserstein_dist_df(x, y)
+    valslist.append(ccs)
+    labelslist.append('1-CC')
 
     if plot:
         plt.figure()
-        plt.boxplot([maxrmss, signrms1s, signrms2s, rmss, ccs],
-            labels=['maxval RMS', 'Sign1 RMS', 'Sign2 RMS', 'RMS', '1-CC'])
+        plt.boxplot(list(num.abs(valslist)),
+            labels=labelslist)
         plt.ylim((-0.01, 1.01))
         plt.savefig(os.path.join(outputdir, 'general.png'))
 
         if predirectory:
             plt.savefig('%s_%s' % (outputdir, 'general.png'))
 
-    maxdiff = predDF.iloc[:, 0].values - yEval.iloc[:, 0].values
-    sign1diff = predDF.iloc[:, 1].values - yEval.iloc[:, 1].values
-    sign2diff = predDF.iloc[:, 2].values - yEval.iloc[:, 2].values
+    # maxdiff = predDF.iloc[:, 0].values - yEval.iloc[:, 0].values
+    # sign1diff = predDF.iloc[:, 1].values - yEval.iloc[:, 1].values
+    # sign2diff = predDF.iloc[:, 2].values - yEval.iloc[:, 2].values
 
     meandiff = (x - y).mean(axis=1)
     stddiff = (x - y).std(axis=1)
+    valslist.append(meandiff)
+    labelslist.append('mean-WV')
+    valslist.append(stddiff)
+    labelslist.append('Std-WV')
 
     if plot:
         plt.figure()
-        vals = [maxdiff, sign1diff, sign2diff, meandiff, stddiff]
-        labels = ['Max', 'Sign1', 'Sign2', 'Mean-WV', 'Std-WV']
+        vals = valslist
+        labels = labelslist
         positions = num.linspace(0, len(vals), len(vals))
-        print(len(vals))
-        print(positions)
+
         parts = plt.violinplot(vals,
             points=30,
             positions=positions,
@@ -262,7 +280,7 @@ def evaluate_waveform_general(predDF, yEval, outputdir, predirectory=True, plot=
 
         plt.savefig(os.path.join(outputdir, 'violin.png'))
 
-    return maxdiff, sign1diff, sign2diff, meandiff, stddiff
+    return valslist, labelslist
 
 
 def line_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, azimuth=0, log=True):
