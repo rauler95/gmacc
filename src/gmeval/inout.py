@@ -3,7 +3,7 @@ import os
 
 import numpy as num
 
-from pyrocko import orthodrome, io
+from pyrocko import orthodrome, io, util
 from pyrocko import moment_tensor as pmt
 
 from openquake.hazardlib.geo import Point, Mesh, PlanarSurface,\
@@ -301,6 +301,7 @@ def obspy_to_source(eventFile):
                     mag = evmag
 
     time = UTCDateTime.strftime(prefOr.time, format='%Y-%m-%d %H:%M:%S')
+    print(time)
     tmin = util.str_to_time(time, format='%Y-%m-%d %H:%M:%S')
 
     source = SourceClass(
@@ -471,9 +472,12 @@ def pyrocko_to_source(eventFile):
             prefOr = origin
 
     for mag in ev.magnitude_list:
-        if mag.public_id != prefMagID:
-            continue
-        magnitude = mag.mag.value
+        if prefMagID is None:
+            magnitude = mag.mag.value
+        else: 
+            if mag.public_id != prefMagID:
+                continue
+            magnitude = mag.mag.value
 
     source = SourceClass(
         name=str(str(ev.public_id).rsplit('=')[-1]),
@@ -485,21 +489,20 @@ def pyrocko_to_source(eventFile):
         form='point')
 
     if not hasattr(ev, 'focal_mechanism_list'):
-        GMm.pwarning('No FM found.')
+        # GMm.pwarning('No FM found.')
         return source
 
     if len(ev.focal_mechanism_list) < 1:
-        GMm.pwarning('No FM found.')
+        # GMm.pwarning('No FM found.')
         return source
 
     prefFM = False
 
     for fm in ev.focal_mechanism_list:
         # print(fm)
-        if prefFMID:
-            GMm.psuccess('\n\nFM ID FOUND!!! NEEDS TO BE IMPLEMENTED\n\n')
-            GMm.pwarning('\n\nFM ID FOUND!!! NEEDS TO BE IMPLEMENTED\n\n')
-            GMm.pfail('\n\nFM ID FOUND!!! NEEDS TO BE IMPLEMENTED\n\n')
+        if prefFMID == fm.public_id:
+            # if 
+            prefFM = fm
             # print(fm)
             # print(fm.public_id)
             # print(fm.triggering_origin_id)
@@ -507,7 +510,7 @@ def pyrocko_to_source(eventFile):
             # print(prefMagID)
             # print(fm.method_id)
             # print(prefFMID)
-            # print()
+            break
         else:
             if prefMagID.rsplit('/')[-2:] == fm.public_id.rsplit('/')[-2:]:
                 prefFM = fm
@@ -532,8 +535,13 @@ def pyrocko_to_source(eventFile):
                             'mnd': tn.mrt.value,
                             'med': -tn.mrp.value,
                             'mne': -tn.mtp.value}
-                except AttributeError:
+                except AttributeError as e:
+                    print(e)
                     pass
+
+                # source.duration = float(mt.source_time_function.duration)
+                # source.risetime = float(mt.source_time_function.riseTime)
+
         else:
             print('None MT found')
 
@@ -562,18 +570,21 @@ def convert_quakeml_to_source(eventFile):
         try:
             source = pyrocko_to_source(eventFile)
             flag = 'Pyrocko_own'
-        except:
+        except BaseException as e:
+            print(e)
             try:
                 source = pyrocko2_to_source(eventFile)
                 flag = 'Pyrocko2'
 
             # except (guts.ValidationError, guts.ArgumentError) as e:
             #     print('Pyrocko in-read error:', e)
-            except:
+            except BaseException as e:
+                print(e)
                 try:
                     source = obspy_to_source(eventFile)
                     flag = 'Obspy'
-                except:
+                except BaseException as e:
+                    print(e)
                     print('Not possible to read-in %s' % (eventFile.rsplit('/')[-1]))
                     # exit()
                     flag = ''
