@@ -21,6 +21,26 @@ def get_rms_df(a, b):
     return get_rms(a, b, axis=1)
 
 
+def get_rms_df_asym(adf, bdf):
+    a = adf.to_numpy()
+    b = bdf.to_numpy()
+
+    ai = a.shape[0]
+    bi = b.shape[0]
+
+    if bi < ai:
+        print('First input df has to be smaller size')
+        exit()
+
+    fac = int(bi / ai)
+    rmss = []
+    for ii in range(fac):
+        rms = get_rms_df(adf, bdf.iloc[ii * ai: (ii + 1) * ai])
+        rmss.append(rms)
+
+    return rmss
+
+
 def get_cc(a, b):
     return num.corrcoef(a, b)[0, 1]
 
@@ -36,6 +56,26 @@ def get_cc_df(x, y, axis=0):
     r = nom / den
 
     return r
+
+
+def get_cc_df_asym(adf, bdf):
+    a = adf.to_numpy()
+    b = bdf.to_numpy()
+
+    ai = a.shape[0]
+    bi = b.shape[0]
+
+    if bi < ai:
+        print('First input df has to be smaller size')
+        exit()
+
+    fac = int(bi / ai)
+    ccs = []
+    for ii in range(fac):
+        cc = get_cc_df(adf, bdf.iloc[ii * ai: (ii + 1) * ai])
+        ccs.append(cc)
+
+    return ccs
 
 
 def get_wasserstein_dist(a, b):
@@ -240,7 +280,7 @@ def calc_source_width_length(magnitude, mode='Blaser', typ='scr', rake=0.):
     return WD, LN
 
 
-def calc_rupture_duration(source=None, mag=None, moment=None,
+def calc_rupture_duration(source=None, mag=None, moment=None, rake=None,
                         vr=None, WD=None, LN=None, nucx=None, nucy=None,
                         mode='uncertain'):
 
@@ -270,7 +310,15 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
         if nucy is None:
             nucy = 0
 
-    print(WD, LN)
+    if not WD and not LN:
+        WD, LN = calc_source_width_length(mag, rake=rake)
+
+    if not vr:
+        vs = 5.9 / num.sqrt(3)  # extract from velocity model for crust?
+        vr = 0.8 * (vs)
+
+    # print(WD, LN, vr)
+
 
     if mode == 'own':
         eLN = LN * (0.5 + 0.5 * abs(nucx))

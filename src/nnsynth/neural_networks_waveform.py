@@ -2,6 +2,10 @@ import os
 
 import numpy as num
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from openquake.hazardlib.geo import geodetic
+from pyrocko import orthodrome
 
 from gmacc.gmeval import util as GMu
 
@@ -356,3 +360,197 @@ def rebuild_time_nn(data):
         trueTr = trueTr.multiply(trSign, axis=0)
 
     return trueTr
+
+
+def prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
+        hypolon, hypolat):
+
+    data = {}
+    lenfac = len(coords)
+    data['magnitude'] = [mag] * lenfac
+    data['strike'] = [strike] * lenfac
+    data['dip'] = [dip] * lenfac
+    data['rake'] = [rake] * lenfac
+    data['ev_depth'] = [depth] * lenfac
+    data['src_duration'] = [duration] * lenfac 
+
+    lons, lats = num.array(coords).T
+    r_hypos = geodetic.distance(hypolon, hypolat, depth, lons, lats, 0.)
+    azimuths = orthodrome.azimuth_numpy(num.array(hypolat), num.array(hypolon), num.array(lats), num.array(lons))
+    azimuths[azimuths > 180] = azimuths[azimuths > 180] - 360.
+
+    data['azimuth'] = azimuths
+    data['rhypo'] = r_hypos
+
+    data = pd.DataFrame(data)
+
+    return data
+
+
+from gmacc.nnsynth import neural_networks as GMnn
+from gmacc.nnsynth import preprocessing as GMpre
+def get_NN_predwv(alldata, model, scalingDict, targets):
+
+    alldata = GMpre.calc_azistrike(alldata, strikecol='strike',
+        azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
+    dropcols = ['azimuth', 'strike']
+    alldata = alldata.drop(columns=dropcols)
+    alldata = GMpre.convert_distances(alldata)
+    alldata = GMpre.normalize(scalingDict, alldata, mode='forward')
+    allpredDF = GMnn.get_predict_df(model, alldata, targets, batchsize=10000)
+    allpredDF = rebuild_time_nn(allpredDF)
+
+    return allpredDF
+
+
+def inital_random_params(num_srcs, coords, hypolon, hypolat):
+    from pyrocko import moment_tensor as pmt
+
+    evaldict = {}
+    datas = []
+    for ii in range(num_srcs):
+
+        testdict = {}
+
+        mag = num.random.uniform(5.0, 7.5)
+        (strike, dip, rake) = pmt.random_strike_dip_rake()
+        depth = num.random.uniform(0.1, 10.)
+        duration = GMu.calc_rupture_duration(mag=mag, rake=rake)
+
+        data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
+            hypolon, hypolat)
+        datas.append(data)
+
+        testdict = {
+            'mag': mag,
+            'strike': strike,
+            'dip': dip,
+            'rake': rake,
+            'depth': depth,
+            'src_duration': duration,
+        }
+        evaldict[ii] = testdict
+
+    return datas, evaldict
+
+
+def nn_evaluation_score(x, y):
+
+    rmss = num.mean(GMu.get_rms_df_asym(x, y), axis=1)
+    ccs = num.mean(GMu.get_cc_df_asym(x, y), axis=1)
+    return rmss, ccs
+
+
+def iterative_params(bestDF, coords, hypolon, hypolat, fac=10):
+    evaldict = {}
+    datas = []
+
+    cnt = 0
+    for it, row in bestDF.iterrows():
+        # print(row)
+        for ff in range(fac):
+            cnt += 1
+            testdict = {}
+
+            if ff == 0:
+                mag = row['mag']
+                strike = row['strike']
+                dip = row['dip']
+                rake = row['rake']
+                depth = row['depth']
+                duration = row['src_duration']
+            else:
+                mag = num.random.normal(row['mag'], 0.1)
+                strike = num.random.normal(row['strike'], 5)
+                dip = num.random.normal(row['dip'], 5)
+                rake = num.random.normal(row['rake'], 5)
+                depth = num.random.normal(row['depth'], 2)
+                duration = num.random.normal(row['src_duration'], 5)
+
+            data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
+                hypolon, hypolat)
+            datas.append(data)
+
+            testdict = {
+                'mag': mag,
+                'strike': strike,
+                'dip': dip,
+                'rake': rake,
+                'depth': depth,
+                'src_duration': duration,
+            }
+            evaldict[cnt] = testdict
+        # print(datas)
+        # exit()
+
+    return datas, evaldict
+
+
+def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords, plotdir):
+
+    numselecttop = int(0.01 * num_srcs)
+    searchfac = int(num_srcs / numselecttop)
+    print(numselecttop, searchfac)
+
+    hypolon = 0.
+    hypolat = 0.
+
+    bestDF = False
+    for ii in range(numiter):
+        print('\nNew iter %s' % ii)
+        if ii == 0:
+            datas, evaldict = inital_random_params(num_srcs, coords, hypolon, hypolat)
+        else:
+            datas, evaldict = iterative_params(bestDF, coords, hypolon, hypolat, searchfac)
+
+        alldata = pd.concat(datas, ignore_index=True)
+        allpredDF = get_NN_predwv(alldata, model, scalingDict, targets)
+
+        rmss, ccs = nn_evaluation_score(refDF, allpredDF)
+
+        evalDF = pd.DataFrame(evaldict).T
+        # print(evalDF)
+        evalDF['rms'] = rmss
+        evalDF['cc'] = 1 - ccs
+        evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
+
+        score = 'rmscc'
+        # score = 'cc'
+        # score = 'rms'
+        bestDF = evalDF.nsmallest(numselecttop, score, keep='all')
+        # print(bestDF)
+        bestsrcparams = bestDF.nsmallest(1, score, keep='all')
+        print(bestsrcparams)
+
+        for col in evalDF.columns:
+            if col in ['rms', 'cc', 'rmscc']:
+                continue
+
+            # plt.figure()
+            fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 8))
+
+            ax1c = 'red'
+            ax1.semilogy(bestDF[col], bestDF['rms'], 'o', color='black', alpha=1)
+            ax1.semilogy(evalDF[col], evalDF['rms'], '.', label='RMS', color=ax1c)
+            ax1.set_ylabel('RMS', color=ax1c)
+            ax1.set_xlabel(col)
+
+            # ax2 = ax1.twinx()
+            ax2c = 'green'
+            ax2.plot(bestDF[col], bestDF['cc'], 'o', color='black', alpha=1)
+            ax2.plot(evalDF[col], evalDF['cc'], '.', label='cc', color=ax2c)
+            ax2.set_ylabel('1 - CC', color=ax2c)
+            ax2.set_xlabel(col)
+
+            ax3c = 'blue'
+            
+            ax3.semilogy(bestDF[col], bestDF['rmscc'], 'o', color='black', alpha=1)
+            ax3.semilogy(evalDF[col], evalDF['rmscc'], '.', label='rmscc', color=ax3c)
+            ax3.set_ylabel('RMSCC', color=ax3c)
+            ax3.set_xlabel(col)
+
+            plt.tight_layout()
+            fig.savefig(os.path.join(plotdir, '%s_%s.png' % (col, ii)))
+            plt.close()
+
+    return bestsrcparams, bestDF
