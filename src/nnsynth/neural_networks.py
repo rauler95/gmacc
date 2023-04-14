@@ -165,7 +165,7 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
-def rmscc(y_true, y_pred, numb):
+def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
@@ -180,13 +180,29 @@ def rmscc(y_true, y_pred, numb):
     r = correlationcoefficient(x, y)
     cc = (1 - r)**2
 
-    e = (10 * cc) + rms + wvrms
+    e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
 
     return e
 
 
 def rmscc1(y_true, y_pred):
-    return rmscc(y_true, y_pred, 1)
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=1)
+
+
+def rmsccw10w1w1(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=1)
+
+
+def rmsccw100w1w1(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=100, w2=1, w3=1)
+
+
+def rmsccw1w10w1(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=1, w2=10, w3=1)
+
+
+def rmsccw10w1w10(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10)
 
 
 def rmscc2(y_true, y_pred):
@@ -412,6 +428,14 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmscc2
     elif loss == 'rmscc3':
         loss = rmscc3
+    elif loss == 'rmsccw10w1w1':
+        loss = rmsccw10w1w1
+    elif loss == 'rmsccw100w1w1':
+        loss = rmsccw100w1w1
+    elif loss == 'rmsccw1w10w1':
+        loss = rmsccw1w10w1
+    elif loss == 'rmsccw10w1w10':
+        loss = rmsccw10w1w10
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -697,10 +721,12 @@ def setup_dataframe(src, scaling_dict, inputcols,
             data[params] = r_hypos
 
         if params == 'src_duration':
-            data[params] = [float(src.duration)] * lenfac
-            # except AttributeError:
-            #     print(
-            #         'Source STF has no duration (Needs to be added).')
+            try:
+                data[params] = [float(src.duration)] * lenfac
+            except (AttributeError, TypeError) as e:
+                print(e)
+                data[params] = [float(src.stf.duration)] * lenfac
+                # print('Source STF has no duration (Needs to be added).')
             #     # dur = GMu.calc_rupture_duration(source=src, mode='uncertain')
             #     dur = GMu.calc_rise_time(source=src)
             #     print('Calculated STF duration of {} s'.format(dur))
@@ -920,6 +946,10 @@ def load_model(file):
                         'rmscc1': rmscc1,
                         'rmscc2': rmscc2,
                         'rmscc3': rmscc3,
+                        'rmsccw10w1w1': rmsccw10w1w1,
+                        'rmsccw100w1w1': rmsccw100w1w1,
+                        'rmsccw1w10w1': rmsccw1w10w1,
+                        'rmsccw10w1w10': rmsccw10w1w10,
                         })
 
 

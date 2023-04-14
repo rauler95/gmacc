@@ -1066,6 +1066,8 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 pass
             elif valmode in ['abs', 'true']:
                 data = 10**data
+                valMax = 10**valMax
+                valMin = 10**valMin
             else:
                 print('Wrong valmode:', valmode)
 
@@ -1328,16 +1330,20 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             else:
                 # if n % outCol == outCol - 1:#
                 if n == 0:
+                    if valmode == 'log':
+                        strapp = 'in log 10'
+                    else:
+                        strapp = ''
                     if gm == 'pga':
-                        label = '% g in log10'
+                        label = '% g%s' % strapp
                     elif gm == 'pgv':
-                        label = 'cm/s in log10'
+                        label = 'cm/s%s' % strapp
                     elif gm == 'pgd':
-                        label = 'cm in log10'
+                        label = 'cm%s' % strapp
                     elif gm == 'sigdur':
                         label = 's'
                     elif gm == 'ai':
-                        label = 'cm/s in log10'
+                        label = 'cm/s%s' % strapp
                     elif ':' in gm:
                         label = 'Log(Ratio)'
                     else:

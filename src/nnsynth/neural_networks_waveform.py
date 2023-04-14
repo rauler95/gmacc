@@ -6,6 +6,18 @@ import matplotlib.pyplot as plt
 from gmacc.gmeval import util as GMu
 
 
+def read_addtional_information(filepath):
+    adddict = {}
+    with open(filepath) as f:
+        for line in f:
+            if ':' in line:
+                line = line.rsplit()
+                adddict[line[0].replace(':', '')] = float(line[1])
+                print(line)
+
+    return adddict
+
+
 def nn_waveform_plots_none(predDF, yEval, outputdir):
 
     state = num.random.RandomState(seed=1)
@@ -313,12 +325,13 @@ def line_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, azimuth=0, log
 
 
 def rebuild_time_nn(data):
-
     cntstart = 0
     addcol = []
     if 'maxval' in data:
         cntstart += 1
         addcol.append('maxval')
+
+        trMax = (10**data['maxval'])
 
     if 'maxval-sign' in data:
         cntstart += 1
@@ -329,19 +342,16 @@ def rebuild_time_nn(data):
         addcol.append('maxval-sign-pos')
         addcol.append('maxval-sign-neg')
 
-    print(data)
-
-    trMax = (10**data['maxval'])
-
-    trSign = num.zeros(len(trMax))
-    if 'maxval-sign-pos' in data:
+        trSign = num.zeros(len(trMax))
         trSign[data['maxval-sign-pos'] > data['maxval-sign-neg']] = 1
         trSign[data['maxval-sign-pos'] < data['maxval-sign-neg']] = -1
 
     selcols = [col for col in data.columns if col not in addcol]
 
     trueTr = data[selcols]
-    trueTr = trueTr.multiply(trMax, axis=0)
+    if 'maxval' in data:
+        trueTr = trueTr.multiply(trMax, axis=0)
+
     if 'maxval-sign-pos' in data:
         trueTr = trueTr.multiply(trSign, axis=0)
 
