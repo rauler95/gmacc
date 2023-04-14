@@ -255,7 +255,7 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
             vr = 0.8 * (vs)
         print('Rupture velocity:', vr)
 
-        if hasattr(source, 'length') and hasattr(source, 'width'):
+        if hasattr(source, 'length') and hasattr(source, 'width') and source.length is not None and source.width is not None:
             WD = source.width
             LN = source.length
         else:
@@ -263,11 +263,14 @@ def calc_rupture_duration(source=None, mag=None, moment=None,
 
         nucx = source.nucleation_x
         nucy = source.nucleation_y
+
     elif vr is not None and WD is not None and LN is not None:
         if nucx is None:
             nucx = 0
         if nucy is None:
             nucy = 0
+
+    print(WD, LN)
 
     if mode == 'own':
         eLN = LN * (0.5 + 0.5 * abs(nucx))
