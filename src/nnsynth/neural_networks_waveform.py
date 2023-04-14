@@ -441,7 +441,7 @@ def nn_evaluation_score(x, y):
     return rmss, ccs
 
 
-def iterative_params(bestDF, coords, hypolon, hypolat, fac=10):
+def iterative_params(bestDF, coords, hypolon, hypolat, fac=10, coolingfac=1):
     evaldict = {}
     datas = []
 
@@ -460,12 +460,12 @@ def iterative_params(bestDF, coords, hypolon, hypolat, fac=10):
                 depth = row['depth']
                 duration = row['src_duration']
             else:
-                mag = num.random.normal(row['mag'], 0.1)
-                strike = num.random.normal(row['strike'], 5)
-                dip = num.random.normal(row['dip'], 5)
-                rake = num.random.normal(row['rake'], 5)
-                depth = num.random.normal(row['depth'], 2)
-                duration = num.random.normal(row['src_duration'], 5)
+                mag = num.random.normal(row['mag'], 0.2 * coolingfac)
+                strike = num.random.normal(row['strike'], 5 * coolingfac)
+                dip = num.random.normal(row['dip'], 5 * coolingfac)
+                rake = num.random.normal(row['rake'], 5 * coolingfac)
+                depth = num.random.normal(row['depth'], 2 * coolingfac)
+                duration = num.random.normal(row['src_duration'], 5 * coolingfac)
 
             data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
                 hypolon, hypolat)
@@ -498,10 +498,14 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords,
     bestDF = False
     for ii in range(numiter):
         print('\nNew iter %s' % ii)
+
         if ii == 0:
             datas, evaldict = inital_random_params(num_srcs, coords, hypolon, hypolat)
         else:
-            datas, evaldict = iterative_params(bestDF, coords, hypolon, hypolat, searchfac)
+            coolingfac = 1 / ii
+            print(coolingfac)
+            datas, evaldict = iterative_params(bestDF, coords, hypolon, hypolat,
+                searchfac, coolingfac=coolingfac)
 
         alldata = pd.concat(datas, ignore_index=True)
         allpredDF = get_NN_predwv(alldata, model, scalingDict, targets)
