@@ -440,6 +440,8 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmsccw1w10w1
     elif loss == 'rmsccw10w1w10':
         loss = rmsccw10w1w10
+    elif loss == 'rmsccw10w1w100':
+        loss = rmsccw10w1w100    
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -954,6 +956,7 @@ def load_model(file):
                         'rmsccw100w1w1': rmsccw100w1w1,
                         'rmsccw1w10w1': rmsccw1w10w1,
                         'rmsccw10w1w10': rmsccw10w1w10,
+                        'rmsccw10w1w100': rmsccw10w1w100,
                         })
 
 
