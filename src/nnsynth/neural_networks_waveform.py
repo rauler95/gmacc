@@ -1,4 +1,5 @@
 import os
+import time
 
 import numpy as num
 import matplotlib.pyplot as plt
@@ -499,24 +500,36 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords,
     for ii in range(numiter):
         print('\nNew iter %s' % ii)
 
+        t1 = time.time()
         if ii == 0:
             datas, evaldict = inital_random_params(num_srcs, coords, hypolon, hypolat)
         else:
             coolingfac = 1 / ii
+            # coolingfac = 2 / ii
             print(coolingfac)
             datas, evaldict = iterative_params(bestDF, coords, hypolon, hypolat,
                 searchfac, coolingfac=coolingfac)
+        print('Time-sources', time.time() - t1)
 
+        t2 = time.time()
         alldata = pd.concat(datas, ignore_index=True)
         allpredDF = get_NN_predwv(alldata, model, scalingDict, targets)
+        print('Time-prediction', time.time() - t2)
 
+        t3 = time.time()
         rmss, ccs = nn_evaluation_score(refDF, allpredDF)
+        print('Time-scores', time.time() - t3)
 
         evalDF = pd.DataFrame(evaldict).T
         # print(evalDF)
         evalDF['rms'] = rmss
         evalDF['cc'] = 1 - ccs
         evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
+        # evalDF['rmscc'] = (10 * evalDF['cc']**2) + evalDF['rms']
+        # evalDF['rmscc'] = (10 * evalDF['cc']**2) * evalDF['rms']
+        # evalDF['rmscc'] = evalDF['cc']**2 + evalDF['rms']
+        # evalDF['rmscc'] = evalDF['cc']**2 * evalDF['rms']
+
 
         score = 'rmscc'
         # score = 'cc'

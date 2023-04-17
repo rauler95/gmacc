@@ -205,6 +205,10 @@ def rmsccw10w1w10(y_true, y_pred):
     return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10)
 
 
+def rmsccw10w1w100(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=100)
+
+
 def rmscc2(y_true, y_pred):
     return rmscc(y_true, y_pred, 2)
 
