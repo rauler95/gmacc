@@ -9,7 +9,8 @@ from openquake.hazardlib.geo import geodetic
 from pyrocko import orthodrome
 
 from gmacc.gmeval import util as GMu
-
+from gmacc.nnsynth import neural_networks as GMnn
+from gmacc.nnsynth import preprocessing as GMpre
 
 def read_addtional_information(filepath):
     adddict = {}
@@ -366,30 +367,38 @@ def rebuild_time_nn(data):
 def prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
         hypolon, hypolat):
 
-    data = {}
     lenfac = len(coords)
-    data['magnitude'] = [mag] * lenfac
-    data['strike'] = [strike] * lenfac
-    data['dip'] = [dip] * lenfac
-    data['rake'] = [rake] * lenfac
-    data['ev_depth'] = [depth] * lenfac
-    data['src_duration'] = [duration] * lenfac 
+    # data = {}
+    # data['magnitude'] = [mag] * lenfac
+    # data['strike'] = [strike] * lenfac
+    # data['dip'] = [dip] * lenfac
+    # data['rake'] = [rake] * lenfac
+    # data['ev_depth'] = [depth] * lenfac
+    # data['src_duration'] = [duration] * lenfac 
 
     lons, lats = num.array(coords).T
     r_hypos = geodetic.distance(hypolon, hypolat, depth, lons, lats, 0.)
-    azimuths = orthodrome.azimuth_numpy(num.array(hypolat), num.array(hypolon), num.array(lats), num.array(lons))
+    azimuths = geodetic.azimuth(hypolon, hypolat, lons, lats)
     azimuths[azimuths > 180] = azimuths[azimuths > 180] - 360.
 
-    data['azimuth'] = azimuths
-    data['rhypo'] = r_hypos
+    # data['azimuth'] = azimuths
+    # data['rhypo'] = r_hypos
 
+    data = {
+        'magnitude': [mag] * lenfac,
+        'strike': [strike] * lenfac,
+        'dip': [dip] * lenfac,
+        'rake': [rake] * lenfac,
+        'ev_depth': [depth] * lenfac,
+        'src_duration': [duration] * lenfac,
+        'azimuth': azimuths,
+        'rhypo': r_hypos
+    }
     data = pd.DataFrame(data)
 
     return data
 
 
-from gmacc.nnsynth import neural_networks as GMnn
-from gmacc.nnsynth import preprocessing as GMpre
 def get_NN_predwv(alldata, model, scalingDict, targets):
 
     alldata = GMpre.calc_azistrike(alldata, strikecol='strike',
@@ -404,97 +413,280 @@ def get_NN_predwv(alldata, model, scalingDict, targets):
     return allpredDF
 
 
-def inital_random_params(num_srcs, coords, hypolon, hypolat):
+def inital_random_params(num_srcs, coords, hypolonguess, hypolatguess):
     from pyrocko import moment_tensor as pmt
 
+    # t1 = time.time()
+    # evaldict = {}
+    # datas = []
+    # for ii in range(num_srcs):
+
+    #     mag = num.random.uniform(5.0, 7.5)
+    #     (strike, dip, rake) = pmt.random_strike_dip_rake()
+    #     depth = num.random.uniform(0.1, 10.)
+    #     duration = GMu.calc_rupture_duration(mag=mag, rake=rake)
+    #     hypolon = num.random.normal(hypolonguess, 0.25)
+    #     hypolat = num.random.normal(hypolatguess, 0.25)
+
+    #     data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
+    #         hypolon, hypolat)
+    #     datas.append(data)
+
+    #     evaldict[ii] = {
+    #         'mag': mag,
+    #         'strike': strike,
+    #         'dip': dip,
+    #         'rake': rake,
+    #         'depth': depth,
+    #         'src_duration': duration,
+    #         'lon': hypolon,
+    #         'lat': hypolat,
+    #     }
+    # # print(datas)
+    # alldata = pd.concat(datas, ignore_index=True)
+    # print(alldata.shape)
+    # print('t1', time.time() - t1)
+    # evalDF = pd.DataFrame(evaldict).T
+    # print(evalDF)
+
+    # t2 = time.time()
     evaldict = {}
-    datas = []
-    for ii in range(num_srcs):
+    alldatas = {}
 
-        testdict = {}
+    lenfac = len(coords)
 
-        mag = num.random.uniform(5.0, 7.5)
-        (strike, dip, rake) = pmt.random_strike_dip_rake()
-        depth = num.random.uniform(0.1, 10.)
-        duration = GMu.calc_rupture_duration(mag=mag, rake=rake)
+    mag = num.random.uniform(5.0, 7.5, num_srcs)
+    depth = num.random.uniform(0.1, 10., num_srcs)
+    hypolon = num.random.normal(hypolonguess, 0.25, num_srcs)
+    hypolat = num.random.normal(hypolatguess, 0.25, num_srcs)
 
-        data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
-            hypolon, hypolat)
-        datas.append(data)
+    strike = num.random.uniform(0, 360, num_srcs)
+    dip = num.random.uniform(0, 90, num_srcs)
+    rake = num.random.uniform(-180, 180, num_srcs)
 
-        testdict = {
-            'mag': mag,
-            'strike': strike,
-            'dip': dip,
-            'rake': rake,
-            'depth': depth,
-            'src_duration': duration,
-        }
-        evaldict[ii] = testdict
+    # t3 = time.time()
+    duration = []
+    for ll in range(len(mag)):
+        dur = GMu.calc_rupture_duration(mag=mag[ll], rake=rake[ll])
+        duration.append(dur)
+    # print('duration calculation', time.time() - t3)
 
-    return datas, evaldict
+    evaldict = {
+        'magnitude': mag,
+        'strike': strike,
+        'dip': dip,
+        'rake': rake,
+        'depth': depth,
+        'duration': duration,
+        'lon': hypolon,
+        'lat': hypolat,
+    }
+
+    alldatas['magnitude'] = num.repeat(mag, lenfac)
+    alldatas['strike'] = num.repeat(strike, lenfac)
+    alldatas['dip'] = num.repeat(dip, lenfac)
+    alldatas['rake'] = num.repeat(rake, lenfac)
+    alldatas['src_duration'] = num.repeat(duration, lenfac)
+    alldatas['ev_depth'] = num.repeat(depth, lenfac)
+    hypolats = num.repeat(hypolat, lenfac)
+    hypolons = num.repeat(hypolon, lenfac)
+
+    lons, lats = num.array(coords).T
+    lons = list(lons) * len(mag)
+    lats = list(lats) * len(mag)
+    r_hypos = geodetic.distance(hypolons, hypolats, alldatas['ev_depth'], lons, lats, 0.)
+    azimuths = geodetic.azimuth(hypolons, hypolats, lons, lats)
+
+    alldatas['rhypo'] = r_hypos
+    alldatas['azimuth'] = azimuths
+
+    alldatas = pd.DataFrame(alldatas)
+    evalDF = pd.DataFrame(evaldict)
+    # print('t2', time.time() - t2)
+
+    return alldatas, evalDF
 
 
-def nn_evaluation_score(x, y):
-
-    rmss = num.mean(GMu.get_rms_df_asym(x, y), axis=1)
-    ccs = num.mean(GMu.get_cc_df_asym(x, y), axis=1)
-    return rmss, ccs
-
-
-def iterative_params(bestDF, coords, hypolon, hypolat, fac=10, coolingfac=1):
-    evaldict = {}
-    datas = []
-
+def iterative_params(bestDF, coords, fac=10, coolingfac=1):
     cnt = 0
+
+    # t1 = time.time()
+    
+    # evaldict = {}
+    # datas = []
+    # for it, row in bestDF.iterrows():
+    #     # print(row)
+    #     for ff in range(fac):
+    #         cnt += 1
+    #         testdict = {}
+
+    #         if ff == 0:
+    #             mag = row['mag']
+    #             strike = row['strike']
+    #             dip = row['dip']
+    #             rake = row['rake']
+    #             depth = row['depth']
+    #             duration = row['src_duration']
+    #             hypolon = row['lon']
+    #             hypolat = row['lat']
+    #         else:
+    #             magf = False
+    #             while not magf:
+    #                 mag = num.random.normal(row['mag'], 0.2 * coolingfac)
+    #                 if mag >= 5.0 and mag <= 7.5:
+    #                     magf = True
+
+    #             depthf = False
+    #             while not depthf:
+    #                 depth = num.random.normal(row['depth'], 2 * coolingfac)
+    #                 if depth > 0.0 and depth <= 10.0:
+    #                     depthf = True
+
+    #             strike = num.random.normal(row['strike'], 5 * coolingfac)
+    #             dip = num.random.normal(row['dip'], 5 * coolingfac)
+    #             rake = num.random.normal(row['rake'], 5 * coolingfac)
+                
+    #             duration = num.random.normal(row['src_duration'], 5 * coolingfac)
+    #             hypolon = num.random.normal(row['lon'], 0.25 * coolingfac)
+    #             hypolat = num.random.normal(row['lat'], 0.25 * coolingfac)
+
+    #         data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
+    #             hypolon, hypolat)
+    #         datas.append(data)
+
+    #         testdict = {
+    #             'mag': mag,
+    #             'strike': strike,
+    #             'dip': dip,
+    #             'rake': rake,
+    #             'depth': depth,
+    #             'src_duration': duration,
+    #             'lon': hypolon,
+    #             'lat': hypolat,
+    #         }
+    #         evaldict[cnt] = testdict
+    # alldatas = pd.concat(datas, ignore_index=True)
+    # evalDF = pd.DataFrame(evaldict).T
+    # print('t1', time.time() - t1)
+    # print(alldatas.shape)
+    # print(evalDF)
+
+    # t2 = time.time()
+    evaldict = {}
+    alldatas = {}
+
+    lenfac = len(coords)
+    mag = []
+    depth = []
+    hypolon = []
+    hypolat = []
+    strike = []
+    rake = []
+    dip = []
+    duration = []
     for it, row in bestDF.iterrows():
         # print(row)
         for ff in range(fac):
             cnt += 1
-            testdict = {}
 
             if ff == 0:
-                mag = row['mag']
-                strike = row['strike']
-                dip = row['dip']
-                rake = row['rake']
-                depth = row['depth']
-                duration = row['src_duration']
+                mags = row['magnitude']
+                strikes = row['strike']
+                dips = row['dip']
+                rakes = row['rake']
+                depths = row['depth']
+                durations = row['duration']
+                hlon = row['lon']
+                hlat = row['lat']
             else:
-                mag = num.random.normal(row['mag'], 0.2 * coolingfac)
-                strike = num.random.normal(row['strike'], 5 * coolingfac)
-                dip = num.random.normal(row['dip'], 5 * coolingfac)
-                rake = num.random.normal(row['rake'], 5 * coolingfac)
-                depth = num.random.normal(row['depth'], 2 * coolingfac)
-                duration = num.random.normal(row['src_duration'], 5 * coolingfac)
+                magf = False
+                while not magf:
+                    mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
+                    if mags >= 5.0 and mags <= 7.5:
+                        magf = True
 
-            data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
-                hypolon, hypolat)
-            datas.append(data)
+                depthf = False
+                while not depthf:
+                    depths = num.random.normal(row['depth'], 2 * coolingfac)
+                    if depths > 0.0 and depths <= 10.0:
+                        depthf = True
+                
+                durationf = False
+                while not durationf:
+                    durations = num.random.normal(row['duration'], 5 * coolingfac)
+                    if durations > 0.0:
+                        durationf = True
 
-            testdict = {
-                'mag': mag,
-                'strike': strike,
-                'dip': dip,
-                'rake': rake,
-                'depth': depth,
-                'src_duration': duration,
-            }
-            evaldict[cnt] = testdict
-        # print(datas)
-        # exit()
+                strikes = num.random.normal(row['strike'], 5 * coolingfac)
+                dips = num.random.normal(row['dip'], 5 * coolingfac)
+                rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
+                hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
 
-    return datas, evaldict
+            mag.append(mags)
+            depth.append(depths)
+            hypolon.append(hlon)
+            hypolat.append(hlat)
+            strike.append(strikes)
+            dip.append(dips)
+            rake.append(rakes)
+            duration.append(durations)
+
+    evaldict = {
+        'magnitude': mag,
+        'strike': strike,
+        'dip': dip,
+        'rake': rake,
+        'depth': depth,
+        'duration': duration,
+        'lon': hypolon,
+        'lat': hypolat,
+    }
+
+    alldatas['magnitude'] = num.repeat(mag, lenfac)
+    alldatas['strike'] = num.repeat(strike, lenfac)
+    alldatas['dip'] = num.repeat(dip, lenfac)
+    alldatas['rake'] = num.repeat(rake, lenfac)
+    alldatas['src_duration'] = num.repeat(duration, lenfac)
+    alldatas['ev_depth'] = num.repeat(depth, lenfac)
+    hypolats = num.repeat(hypolat, lenfac)
+    hypolons = num.repeat(hypolon, lenfac)
+
+    lons, lats = num.array(coords).T
+    lons = list(lons) * len(mag)
+    lats = list(lats) * len(mag)
+    r_hypos = geodetic.distance(hypolons, hypolats, alldatas['ev_depth'], lons, lats, 0.)
+    azimuths = geodetic.azimuth(hypolons, hypolats, lons, lats)
+
+    alldatas['rhypo'] = r_hypos
+    alldatas['azimuth'] = azimuths
+
+    alldatas = pd.DataFrame(alldatas)
+    evalDF = pd.DataFrame(evaldict)
+    # print('t2', time.time() - t2)
+    # print(alldatas.shape)
+    # print(evalDF)
+
+    return alldatas, evalDF
 
 
-def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords, plotdir):
+def nn_evaluation_score(x, y):
+    rmss = num.mean(GMu.get_rms_df_asym_once(x, y), axis=1)
+    ccs = num.mean(GMu.get_cc_df_asym_once(x, y), axis=1)
 
-    numselecttop = int(0.01 * num_srcs)
+    return rmss, ccs
+
+
+def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestpercentage,
+        hypolonguess, hypolatguess, coords, plotdir, plot=False):
+
+    # numselecttop = int(0.01 * num_srcs)
+    numselecttop = int(bestpercentage * num_srcs)
+    # numselecttop = int(0.2 * num_srcs)
     searchfac = int(num_srcs / numselecttop)
     print(numselecttop, searchfac)
 
-    hypolon = 0.
-    hypolat = 0.
+    bestDFall = pd.DataFrame()
 
     bestDF = False
     for ii in range(numiter):
@@ -502,34 +694,35 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords,
 
         t1 = time.time()
         if ii == 0:
-            datas, evaldict = inital_random_params(num_srcs, coords, hypolon, hypolat)
+            alldata, evalDF = inital_random_params(num_srcs, coords, 
+                hypolonguess, hypolatguess)
         else:
+            # coolingfac = num.sqrt(1 / ii)
             coolingfac = 1 / ii
             # coolingfac = 2 / ii
             print(coolingfac)
-            datas, evaldict = iterative_params(bestDF, coords, hypolon, hypolat,
-                searchfac, coolingfac=coolingfac)
+            alldata, evalDF = iterative_params(bestDF, coords,
+               searchfac, coolingfac=coolingfac)
+            # alldata = pd.concat(datas, ignore_index=True)
         print('Time-sources', time.time() - t1)
 
         t2 = time.time()
-        alldata = pd.concat(datas, ignore_index=True)
         allpredDF = get_NN_predwv(alldata, model, scalingDict, targets)
         print('Time-prediction', time.time() - t2)
 
         t3 = time.time()
         rmss, ccs = nn_evaluation_score(refDF, allpredDF)
         print('Time-scores', time.time() - t3)
-
-        evalDF = pd.DataFrame(evaldict).T
+        
         # print(evalDF)
         evalDF['rms'] = rmss
         evalDF['cc'] = 1 - ccs
         evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
+        # evalDF['rmscc'] = evalDF['cc'] + evalDF['rms'] * 3
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) + evalDF['rms']
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) * evalDF['rms']
         # evalDF['rmscc'] = evalDF['cc']**2 + evalDF['rms']
         # evalDF['rmscc'] = evalDF['cc']**2 * evalDF['rms']
-
 
         score = 'rmscc'
         # score = 'cc'
@@ -539,35 +732,105 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, coords,
         bestsrcparams = bestDF.nsmallest(1, score, keep='all')
         print(bestsrcparams)
 
-        for col in evalDF.columns:
-            if col in ['rms', 'cc', 'rmscc']:
-                continue
+        # bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
+        bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
 
-            # plt.figure()
-            fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 8))
+        # if plot:
+        #     bidx = bestsrcparams.index[0]
+        #     lenfac = len(coords)
+        #     bestDFwv = allpredDF.iloc[bidx * lenfac: (bidx + 1) * lenfac]
+        #     fig, axs = plt.subplots(len(bestDFwv), 1, figsize=(16, 16), sharex=True)#, hspace=0.)
+        #     for ww in range(len(bestDFwv)):
+        #         axs[ww].plot(bestDFwv.iloc[ww], label='pred')
+        #         axs[ww].plot(refDF.iloc[ww], label='ref')
 
-            ax1c = 'red'
-            ax1.semilogy(bestDF[col], bestDF['rms'], 'o', color='black', alpha=1)
-            ax1.semilogy(evalDF[col], evalDF['rms'], '.', label='RMS', color=ax1c)
-            ax1.set_ylabel('RMS', color=ax1c)
-            ax1.set_xlabel(col)
+        #     plt.legend()
+        #     plt.tight_layout()
+        #     # plt.show()
+        #     fig.savefig(os.path.join(plotdir, 'waveform_%s.png' % (ii)))
+        #     # exit()
 
-            # ax2 = ax1.twinx()
-            ax2c = 'green'
-            ax2.plot(bestDF[col], bestDF['cc'], 'o', color='black', alpha=1)
-            ax2.plot(evalDF[col], evalDF['cc'], '.', label='cc', color=ax2c)
-            ax2.set_ylabel('1 - CC', color=ax2c)
-            ax2.set_xlabel(col)
+        #     for col in evalDF.columns:
+        #         if col in ['rms', 'cc', 'rmscc']:
+        #             continue
 
-            ax3c = 'blue'
-            
-            ax3.semilogy(bestDF[col], bestDF['rmscc'], 'o', color='black', alpha=1)
-            ax3.semilogy(evalDF[col], evalDF['rmscc'], '.', label='rmscc', color=ax3c)
-            ax3.set_ylabel('RMSCC', color=ax3c)
-            ax3.set_xlabel(col)
+        #         # plt.figure()
+        #         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 8))
 
-            plt.tight_layout()
-            fig.savefig(os.path.join(plotdir, '%s_%s.png' % (col, ii)))
-            plt.close()
+        #         ax1c = 'red'
+        #         ax1.semilogy(bestDF[col], bestDF['rms'], 'o', color='black', alpha=1)
+        #         ax1.semilogy(evalDF[col], evalDF['rms'], '.', label='RMS', color=ax1c)
+        #         ax1.set_ylabel('RMS', color=ax1c)
+        #         ax1.set_xlabel(col)
 
-    return bestsrcparams, bestDF
+        #         # ax2 = ax1.twinx()
+        #         ax2c = 'green'
+        #         ax2.plot(bestDF[col], bestDF['cc'], 'o', color='black', alpha=1)
+        #         ax2.plot(evalDF[col], evalDF['cc'], '.', label='cc', color=ax2c)
+        #         ax2.set_ylabel('1 - CC', color=ax2c)
+        #         ax2.set_xlabel(col)
+
+        #         ax3c = 'blue'
+                
+        #         ax3.semilogy(bestDF[col], bestDF['rmscc'], 'o', color='black', alpha=1)
+        #         ax3.semilogy(evalDF[col], evalDF['rmscc'], '.', label='rmscc', color=ax3c)
+        #         ax3.set_ylabel('RMSCC', color=ax3c)
+        #         ax3.set_xlabel(col)
+
+        #         plt.tight_layout()
+        #         fig.savefig(os.path.join(plotdir, '%s_%s.png' % (col, ii)))
+        #         plt.close()
+
+    # if plot:
+    #     print('\nPlotting')
+    #     print(bestDFall)
+    #     import matplotlib as mpl
+    #     from matplotlib import cm
+
+    #     norm = mpl.colors.Normalize(vmin=0, vmax=numiter)
+    #     cmap = cm.get_cmap('hsv')
+        
+    #     for col in bestDFall.columns:
+    #         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 8))
+    #         for ni in range(numiter):
+    #             # if ni == numiter:
+    #             #     continue
+    #             idx1 = numselecttop * ni
+    #             idx2 = numselecttop * (ni + 1)
+    #             color = cmap(norm(ni))
+    #             # print(ni, numselecttop)
+    #             # print(color)
+    #             # print(bestDFall[col])
+    #             # print(idx1)
+    #             # print(idx2)
+    #             # print(bestDFall[col].iloc[idx1:idx2])
+    #             # exit()
+
+    #             # ax1c = 'red'
+    #             # ax1.semilogy(bestDFall[col], bestDFall['rms'], 'o', color='black', alpha=1)
+    #             ax1.semilogy(bestDFall[col].iloc[idx1:idx2], bestDFall['rms'].iloc[idx1:idx2], '.', label='RMS', color=color)
+    #             ax1.set_ylabel('RMS')
+    #             ax1.set_xlabel(col)
+
+    #             # ax2 = ax1.twinx()
+    #             # ax2c = 'green'
+    #             # ax2.plot(bestDFall[col], bestDFall['cc'], 'o', color='black', alpha=1)
+    #             ax2.plot(bestDFall[col].iloc[idx1:idx2], bestDFall['cc'].iloc[idx1:idx2], '.', label='cc', color=color)
+    #             ax2.set_ylabel('1 - CC')
+    #             ax2.set_xlabel(col)
+
+    #             # ax3c = 'blue'
+    #             # ax3.semilogy(bestDFall[col], bestDFall['rmscc'], 'o', color='black', alpha=1)
+    #             ax3.semilogy(bestDFall[col].iloc[idx1:idx2], bestDFall['rmscc'].iloc[idx1:idx2], '.', label='rmscc', color=color)
+    #             ax3.set_ylabel('RMSCC')
+    #             ax3.set_xlabel(col)
+
+    #         # cb1 = mpl.colorbar.ColorbarBase(ax2, cmap=cmap,
+    #         #                     norm=norm,
+    #         #                     orientation='horizontal')
+    #         # cb1.set_label('Some Units')
+    #         fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap))
+    #         plt.tight_layout()
+    #         fig.savefig(os.path.join(plotdir, '%s.png' % (col)))
+
+    return bestsrcparams, bestDFall
