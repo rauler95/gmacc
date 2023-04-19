@@ -410,6 +410,13 @@ def get_NN_predwv(alldata, model, scalingDict, targets):
     allpredDF = GMnn.get_predict_df(model, alldata, targets, batchsize=10000)
     allpredDF = rebuild_time_nn(allpredDF)
 
+    # print(allpredDF)
+    # allpredDF = allpredDF.diff(axis=1)
+    # allpredDF = allpredDF.fillna(0)
+    # allpredDF = allpredDF.drop(columns='0')
+    # print(allpredDF)
+    # exit()
+
     return allpredDF
 
 
@@ -510,67 +517,6 @@ def inital_random_params(num_srcs, coords, hypolonguess, hypolatguess):
 def iterative_params(bestDF, coords, fac=10, coolingfac=1):
     cnt = 0
 
-    # t1 = time.time()
-    
-    # evaldict = {}
-    # datas = []
-    # for it, row in bestDF.iterrows():
-    #     # print(row)
-    #     for ff in range(fac):
-    #         cnt += 1
-    #         testdict = {}
-
-    #         if ff == 0:
-    #             mag = row['mag']
-    #             strike = row['strike']
-    #             dip = row['dip']
-    #             rake = row['rake']
-    #             depth = row['depth']
-    #             duration = row['src_duration']
-    #             hypolon = row['lon']
-    #             hypolat = row['lat']
-    #         else:
-    #             magf = False
-    #             while not magf:
-    #                 mag = num.random.normal(row['mag'], 0.2 * coolingfac)
-    #                 if mag >= 5.0 and mag <= 7.5:
-    #                     magf = True
-
-    #             depthf = False
-    #             while not depthf:
-    #                 depth = num.random.normal(row['depth'], 2 * coolingfac)
-    #                 if depth > 0.0 and depth <= 10.0:
-    #                     depthf = True
-
-    #             strike = num.random.normal(row['strike'], 5 * coolingfac)
-    #             dip = num.random.normal(row['dip'], 5 * coolingfac)
-    #             rake = num.random.normal(row['rake'], 5 * coolingfac)
-                
-    #             duration = num.random.normal(row['src_duration'], 5 * coolingfac)
-    #             hypolon = num.random.normal(row['lon'], 0.25 * coolingfac)
-    #             hypolat = num.random.normal(row['lat'], 0.25 * coolingfac)
-
-    #         data = prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
-    #             hypolon, hypolat)
-    #         datas.append(data)
-
-    #         testdict = {
-    #             'mag': mag,
-    #             'strike': strike,
-    #             'dip': dip,
-    #             'rake': rake,
-    #             'depth': depth,
-    #             'src_duration': duration,
-    #             'lon': hypolon,
-    #             'lat': hypolat,
-    #         }
-    #         evaldict[cnt] = testdict
-    # alldatas = pd.concat(datas, ignore_index=True)
-    # evalDF = pd.DataFrame(evaldict).T
-    # print('t1', time.time() - t1)
-    # print(alldatas.shape)
-    # print(evalDF)
-
     # t2 = time.time()
     evaldict = {}
     alldatas = {}
@@ -598,6 +544,8 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 durations = row['duration']
                 hlon = row['lon']
                 hlat = row['lat']
+                # hlon = 0.
+                # hlat = 0.
             else:
                 magf = False
                 while not magf:
@@ -617,11 +565,30 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                     if durations > 0.0:
                         durationf = True
 
+                # rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                rakef = False
+                while not rakef:
+                    rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                    if rakes >= -180.0 and rakes <= 180.:
+                        rakef = True
+
+                # dips = num.random.normal(row['dip'], 5 * coolingfac)
+                dipf = False
+                while not dipf:
+                    dips = num.random.normal(row['dip'], 5 * coolingfac)
+                    if dips >= -180.0 and dips <= 180.:
+                        dipf = True
+
                 strikes = num.random.normal(row['strike'], 5 * coolingfac)
-                dips = num.random.normal(row['dip'], 5 * coolingfac)
-                rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                # if strikes > 360:
+                #     strikes -= 360
+                # elif strikes < 0.0:
+                #     strikes += 360
+
                 hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
                 hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
+                # hlon = 0.
+                # hlat = 0.
 
             mag.append(mags)
             depth.append(depths)
@@ -697,6 +664,7 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
             alldata, evalDF = inital_random_params(num_srcs, coords, 
                 hypolonguess, hypolatguess)
         else:
+            # coolingfac = num.sqrt(num.sqrt(1 / ii))
             # coolingfac = num.sqrt(1 / ii)
             coolingfac = 1 / ii
             # coolingfac = 2 / ii
@@ -718,7 +686,7 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
         evalDF['rms'] = rmss
         evalDF['cc'] = 1 - ccs
         evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
-        # evalDF['rmscc'] = evalDF['cc'] + evalDF['rms'] * 3
+        # evalDF['rmscc'] = evalDF['cc'] + (evalDF['rms'] * 10)
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) + evalDF['rms']
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) * evalDF['rms']
         # evalDF['rmscc'] = evalDF['cc']**2 + evalDF['rms']
@@ -735,20 +703,20 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
         # bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
         bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
 
-        # if plot:
-        #     bidx = bestsrcparams.index[0]
-        #     lenfac = len(coords)
-        #     bestDFwv = allpredDF.iloc[bidx * lenfac: (bidx + 1) * lenfac]
-        #     fig, axs = plt.subplots(len(bestDFwv), 1, figsize=(16, 16), sharex=True)#, hspace=0.)
-        #     for ww in range(len(bestDFwv)):
-        #         axs[ww].plot(bestDFwv.iloc[ww], label='pred')
-        #         axs[ww].plot(refDF.iloc[ww], label='ref')
+        if plot:
+            bidx = bestsrcparams.index[0]
+            lenfac = len(coords)
+            bestDFwv = allpredDF.iloc[bidx * lenfac: (bidx + 1) * lenfac]
+            fig, axs = plt.subplots(len(bestDFwv), 1, figsize=(16, 16), sharex=True)#, hspace=0.)
+            for ww in range(len(bestDFwv)):
+                axs[ww].plot(bestDFwv.iloc[ww], label='pred')
+                axs[ww].plot(refDF.iloc[ww], label='ref')
 
-        #     plt.legend()
-        #     plt.tight_layout()
-        #     # plt.show()
-        #     fig.savefig(os.path.join(plotdir, 'waveform_%s.png' % (ii)))
-        #     # exit()
+            plt.legend()
+            plt.tight_layout()
+            # plt.show()
+            fig.savefig(os.path.join(plotdir, 'waveform_%s.png' % (ii)))
+            # exit()
 
         #     for col in evalDF.columns:
         #         if col in ['rms', 'cc', 'rmscc']:

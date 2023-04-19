@@ -1,5 +1,6 @@
 import numpy as num
 import random
+import pandas as pd
 
 from pyrocko import orthodrome
 from pyrocko import moment_tensor as pmt
@@ -21,24 +22,21 @@ def get_rms_df(a, b):
     return get_rms(a, b, axis=1)
 
 
-def get_rms_df_asym(adf, bdf):
-    a = adf.to_numpy()
-    b = bdf.to_numpy()
-
-    ai = a.shape[0]
-    bi = b.shape[0]
+def get_rms_df_asym_once(adf, bdf):
+    ai = adf.shape[0]
+    bi = bdf.shape[0]
 
     if bi < ai:
         print('First input df has to be smaller size')
         exit()
 
     fac = int(bi / ai)
-    rmss = []
-    for ii in range(fac):
-        rms = get_rms_df(adf, bdf.iloc[ii * ai: (ii + 1) * ai])
-        rmss.append(rms)
+    
+    nadf = pd.concat([adf] * fac, ignore_index=True)
+    rms = get_rms_df(nadf, bdf)
+    rms = rms.reshape(fac, ai)
 
-    return rmss
+    return rms
 
 
 def get_cc(a, b):
@@ -58,24 +56,21 @@ def get_cc_df(x, y, axis=0):
     return r
 
 
-def get_cc_df_asym(adf, bdf):
-    a = adf.to_numpy()
-    b = bdf.to_numpy()
-
-    ai = a.shape[0]
-    bi = b.shape[0]
+def get_cc_df_asym_once(adf, bdf):
+    ai = adf.shape[0]
+    bi = bdf.shape[0]
 
     if bi < ai:
         print('First input df has to be smaller size')
         exit()
 
     fac = int(bi / ai)
-    ccs = []
-    for ii in range(fac):
-        cc = get_cc_df(adf, bdf.iloc[ii * ai: (ii + 1) * ai])
-        ccs.append(cc)
+    
+    nadf = pd.concat([adf] * fac, ignore_index=True)
+    rms = get_cc_df(nadf, bdf)
+    rms = rms.reshape(fac, ai)
 
-    return ccs
+    return rms
 
 
 def get_wasserstein_dist(a, b):
@@ -108,59 +103,34 @@ def calc_source_width_length(magnitude, mode='Blaser', typ='scr', rake=0.):
         #### Blaser et al., 2010
 
         if rake < 135 and rake > 45:
-            # print('reverse')
-            # wa = -1.86 + num.random.normal(0, 0.12)
-            # wb = 0.46 + num.random.normal(0, 0.02)
             ws = 0.17
             wcov = num.matrix([[27.47, -3.77], [-3.77, 0.52]]) * 1e-5
             wa, wb = num.random.multivariate_normal([-1.86, 0.46], wcov)
 
-            # la = -2.37 + num.random.normal(0, 0.13)
-            # lb = 0.57 + num.random.normal(0, 0.02)
             ls = 0.18
             lcov = num.matrix([[26.14, -3.67], [-3.67, 0.52]]) * 1e-5
             la, lb = num.random.multivariate_normal([-2.37, 0.57], lcov)
 
         elif rake > -135 and rake < -45:
-            # print('normal')
-            # wa = -1.20 + num.random.normal(0, 0.25)
-            # wb = 0.36 + num.random.normal(0, 0.04)
             ws = 0.16
             wcov = num.matrix([[264.18, -42.02], [-42.02, 6.73]]) * 1e-5
             wa, wb = num.random.multivariate_normal([-1.20, 0.36], wcov)
 
-            # la = -1.91 + num.random.normal(0, 0.29)
-            # lb = 0.52 + num.random.normal(0, 0.04)
             ls = 0.18
             lcov = num.matrix([[222.24, -32.34], [-32.34, 4.75]]) * 1e-5
             la, lb = num.random.multivariate_normal([-1.91, 0.52], lcov)
 
         else:
-            # print('strike-slip')
-            # wa = -1.12 + num.random.normal(0, 0.12)
-            # wb = 0.33 + num.random.normal(0, 0.02)
             ws = 0.15
             wcov = num.matrix([[13.48, -2.18], [-2.18, 0.36]]) * 1e-5
             wa, wb = num.random.multivariate_normal([-1.12, 0.33], wcov)
 
-            # la = -2.69 + num.random.normal(0, 0.11)
-            # lb = 0.64 + num.random.normal(0, 0.02)
             ls = 0.18
             lcov = num.matrix([[12.37, -1.94], [-1.94, 0.31]]) * 1e-5
             la, lb = num.random.multivariate_normal([-2.69, 0.64], lcov)
 
-        # LN = 10**(num.random.normal(magnitude * lb + la, ls**2))
-        # WD = 10**(num.random.normal(magnitude * wb + wa, ws**2))
-
         LN = 10**(num.random.normal(magnitude * lb + la, ls**2))
         WD = 10**(num.random.normal(magnitude * wb + wa, ws**2))
-
-        # print(LN)
-        # print(WD)
-        # print()
-
-        # LN = LN / 1000
-        # WD = WD / 1000
 
     elif mode == 'Leonard':
         ### Leonard 2010/2014
@@ -319,7 +289,6 @@ def calc_rupture_duration(source=None, mag=None, moment=None, rake=None,
 
     # print(WD, LN, vr)
 
-
     if mode == 'own':
         eLN = LN * (0.5 + 0.5 * abs(nucx))
         eWD = WD * (0.5 + 0.5 * abs(nucy))
@@ -333,8 +302,9 @@ def calc_rupture_duration(source=None, mag=None, moment=None, rake=None,
         eWD = WD * 0.5
         diag = num.sqrt((eLN)**2 + (eWD)**2)
 
-        maxlen = float(max(eLN, eWD, diag))
-        dur = (maxlen / vr)  # Duration from middle
+        # maxlen = float(max(eLN, eWD, diag))
+        # dur = (maxlen / vr)  # Duration from middle
+        dur = diag / vr
         duration = float(num.random.uniform(dur, 2 * dur))  # Uncertainty
 
     elif mode == 'pub':
