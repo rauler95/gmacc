@@ -180,7 +180,7 @@ def rmscc_multiply(y_true, y_pred, numb):
     r = correlationcoefficient(x, y)
     cc = (1 - r)**2
 
-    e = (cc * rms) + wvrms * 100
+    e = cc * rms * wvrms
 
     return e
 
