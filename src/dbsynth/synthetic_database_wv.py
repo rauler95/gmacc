@@ -12,6 +12,7 @@ import gmacc.gmeval.observation as GMobs
 
 import gmacc.gmeval.sources as GMs
 import gmacc.gmeval.util as GMu
+import gmacc.dbsynth.synthetic_database as GMdb
 
 
 def get_database_and_wv(args):
@@ -71,95 +72,95 @@ def get_database_and_wv(args):
         p.join()
 
 
-def create_random_source(sourcemode, ii):
+# def create_random_source(sourcemode, ii):
 
-    num.random.seed(seed=ii)
+#     num.random.seed(seed=ii)
 
-    mag = num.random.randint(5000, 7501) / 1000.
-    #strike = float(num.random.randint(0., 360.))
-    #dip = float(num.random.randint(1, 89))
-    #rake = float(num.random.randint(-180, 180))
+#     mag = num.random.randint(5000, 7501) / 1000.
+#     #strike = float(num.random.randint(0., 360.))
+#     #dip = float(num.random.randint(1, 89))
+#     #rake = float(num.random.randint(-180, 180))
    
-    (strike, dip, rake) = pmt.random_strike_dip_rake()
+#     (strike, dip, rake) = pmt.random_strike_dip_rake()
 
-    lat = num.random.uniform(-10., 10.)
-    lon = num.random.uniform(-10., 10.)
-    depth = num.random.uniform(0.1, 20.)
+#     lat = num.random.uniform(-10., 10.)
+#     lon = num.random.uniform(-10., 10.)
+#     depth = num.random.uniform(0.1, 20.)
 
-    ## MT ##
-    if sourcemode == 'MT':
-        mt = pmt.MomentTensor(strike=strike, dip=dip, rake=rake, magnitude=mag)
+#     ## MT ##
+#     if sourcemode == 'MT':
+#         mt = pmt.MomentTensor(strike=strike, dip=dip, rake=rake, magnitude=mag)
 
-        src = gf.MTSource(lat=lat, lon=lon,
-                    depth=depth * 1000.,
-                    mnn=mt.mnn, mee=mt.mee, mdd=mt.mdd,
-                    mne=mt.mne, mnd=mt.mnd, med=mt.med)
-        src.validate()
+#         src = gf.MTSource(lat=lat, lon=lon,
+#                     depth=depth * 1000.,
+#                     mnn=mt.mnn, mee=mt.mee, mdd=mt.mdd,
+#                     mne=mt.mne, mnd=mt.mnd, med=mt.med)
+#         src.validate()
 
-        source = GMs.SourceClass(
-                name='Synth',
-                form='point',
-                time=src.time,
-                lon=float(lon),  # hypo
-                lat=float(lat),  # hypo
-                depth=float(depth),  # hypo
-                magnitude=float(mag),
-                strike=float(strike),
-                dip=float(dip),
-                rake=float(rake),
-                tensor=dict(mnn=mt.mnn, mee=mt.mee, mdd=mt.mdd,
-                    mne=mt.mne, mnd=mt.mnd, med=mt.med))
+#         source = GMs.SourceClass(
+#                 name='Synth',
+#                 form='point',
+#                 time=src.time,
+#                 lon=float(lon),  # hypo
+#                 lat=float(lat),  # hypo
+#                 depth=float(depth),  # hypo
+#                 magnitude=float(mag),
+#                 strike=float(strike),
+#                 dip=float(dip),
+#                 rake=float(rake),
+#                 tensor=dict(mnn=mt.mnn, mee=mt.mee, mdd=mt.mdd,
+#                     mne=mt.mne, mnd=mt.mnd, med=mt.med))
 
-    # ## RS ##
-    # elif sourcemode == 'RS':
-    #     ## depth corresponds to top of rupture depth/depth of anchor point
+#     # ## RS ##
+#     # elif sourcemode == 'RS':
+#     #     ## depth corresponds to top of rupture depth/depth of anchor point
 
-    #     # nucx = num.random.uniform(-1, 1)  # (-1 = left edge, +1 = right edge)
-    #     # nucy = num.random.uniform(-1, 1)  # (-1 = upper edge, +1 = lower edge)
+#     #     # nucx = num.random.uniform(-1, 1)  # (-1 = left edge, +1 = right edge)
+#     #     # nucy = num.random.uniform(-1, 1)  # (-1 = upper edge, +1 = lower edge)
 
-    #     # if mag < 6.:
-    #     #     nucfac = 3
-    #     # elif mag < 7:
-    #     #     nucfac = 5
-    #     # else:
-    #     #     nucfac = 7
-    #     nucfac = 9
+#     #     # if mag < 6.:
+#     #     #     nucfac = 3
+#     #     # elif mag < 7:
+#     #     #     nucfac = 5
+#     #     # else:
+#     #     #     nucfac = 7
+#     #     nucfac = 9
 
-    #     anchor = 'top_left'
-    #     nucx = float(num.random.choice(num.linspace(-1, 1, nucfac)))
-    #     # (-1 = left edge, +1 = right edge)
+#     #     anchor = 'top_left'
+#     #     nucx = float(num.random.choice(num.linspace(-1, 1, nucfac)))
+#     #     # (-1 = left edge, +1 = right edge)
         
-    #     nucy = float(num.random.choice(num.linspace(-1, 1, nucfac))) 
-    #     # (-1 = upper edge, +1 = lower edge)
+#     #     nucy = float(num.random.choice(num.linspace(-1, 1, nucfac))) 
+#     #     # (-1 = upper edge, +1 = lower edge)
         
-    #     width, length = GMu.calc_source_width_length(mag, mode='Blaser', rake=rake)
+#     #     width, length = GMu.calc_source_width_length(mag, mode='Blaser', rake=rake)
 
-    #     src = gf.RectangularSource(time=util.str_to_time('1995-01-29 13:00:00.0'),
-    #                         lat=lat, lon=lon, depth=depth * 1000., anchor=anchor,
-    #                         strike=strike, dip=dip, rake=rake,
-    #                         width=width * 1000., length=length * 1000.,
-    #                         nucleation_x=nucx,
-    #                         nucleation_y=nucy,
-    #                         decimation_factor=1,
-    #                         magnitude=mag)
-    #     src.validate()
-    #     source = GMs.from_rectsource_to_own_source(src)
-    #     source.create_rupture_surface()
-    else:
-        print('Wrong mode')
-        exit()
+#     #     src = gf.RectangularSource(time=util.str_to_time('1995-01-29 13:00:00.0'),
+#     #                         lat=lat, lon=lon, depth=depth * 1000., anchor=anchor,
+#     #                         strike=strike, dip=dip, rake=rake,
+#     #                         width=width * 1000., length=length * 1000.,
+#     #                         nucleation_x=nucx,
+#     #                         nucleation_y=nucy,
+#     #                         decimation_factor=1,
+#     #                         magnitude=mag)
+#     #     src.validate()
+#     #     source = GMs.from_rectsource_to_own_source(src)
+#     #     source.create_rupture_surface()
+#     else:
+#         print('Wrong mode')
+#         exit()
 
-    source.update(name='%s_%s' % (source.name, ii))
-    source.validate()
+#     source.update(name='%s_%s' % (source.name, ii))
+#     source.validate()
 
-    return source
+#     return source
 
 
 def calculate_wv(ii, args, mapextent, ncords, mapping):
     wvdir = 'synth_wv'
 
     reftime = time.time()
-    source = create_random_source(args.sourcemode, ii=ii)
+    source = GMdb.create_random_source(args.sourcemode, ii=ii)
 
     print('Starting %s; Mag: %0.1f, Depth: %0.2f, NucX: %0.2f, NucY %0.2f'
         % (ii, source.magnitude, source.depth,

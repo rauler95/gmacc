@@ -278,6 +278,11 @@ def obspy_to_source(eventFile):
     ev = cat[0]
 
     prefOr = ev.preferred_origin()
+
+    if prefOr is None:
+        prefOr = ev.origins[0]
+        print('Pref origin not set, using first origin')
+
     if prefOr.longitude:
         pass
     else:

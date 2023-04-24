@@ -169,6 +169,17 @@ class StationContainerObservation(StationContainer):
         for sta in rmSta:
             del self.stations[sta]
 
+    def remove_random_stations(self, n):
+        stationList = list(self.stations.keys())
+        keepstations = num.random.choice(stationList, n, replace=False)
+        rmSta = []
+        for sta in self.stations:
+            if sta not in keepstations:
+                rmSta.append(sta)
+
+        for sta in rmSta:
+            del self.stations[sta]
+
     def remove_stations_without_components(self, componentList):
         rmSta = []
         rawlen = len(componentList)

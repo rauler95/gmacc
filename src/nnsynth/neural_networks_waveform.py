@@ -275,6 +275,9 @@ def evaluate_waveform_general(predDF, yEval, outputdir, predirectory=True, plot=
     valslist.append(stddiff)
     labelslist.append('Std-WV')
 
+    del x
+    del y
+
     if plot:
         plt.figure()
         vals = valslist
@@ -411,8 +414,8 @@ def get_NN_predwv(alldata, model, scalingDict, targets):
     allpredDF = rebuild_time_nn(allpredDF)
 
     # print(allpredDF)
-    # allpredDF = allpredDF.diff(axis=1)
-    # allpredDF = allpredDF.fillna(0)
+    allpredDF = allpredDF.diff(axis=1)
+    allpredDF = allpredDF.fillna(0)
     # allpredDF = allpredDF.drop(columns='0')
     # print(allpredDF)
     # exit()
@@ -464,8 +467,13 @@ def inital_random_params(num_srcs, coords, hypolonguess, hypolatguess):
 
     mag = num.random.uniform(5.0, 7.5, num_srcs)
     depth = num.random.uniform(0.1, 10., num_srcs)
-    hypolon = num.random.normal(hypolonguess, 0.25, num_srcs)
-    hypolat = num.random.normal(hypolatguess, 0.25, num_srcs)
+    # hypolon = num.random.normal(hypolonguess, 0.25, num_srcs)
+    # hypolat = num.random.normal(hypolatguess, 0.25, num_srcs)
+    hypolon = num.array([hypolonguess] * num_srcs)
+    hypolat = num.array([hypolatguess] * num_srcs)
+
+    # print(hypolon)
+    # exit()
 
     strike = num.random.uniform(0, 360, num_srcs)
     dip = num.random.uniform(0, 90, num_srcs)
@@ -547,18 +555,25 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 # hlon = 0.
                 # hlat = 0.
             else:
-                magf = False
-                while not magf:
-                    mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
-                    if mags >= 5.0 and mags <= 7.5:
-                        magf = True
 
-                depthf = False
-                while not depthf:
-                    depths = num.random.normal(row['depth'], 2 * coolingfac)
-                    if depths > 0.0 and depths <= 10.0:
-                        depthf = True
-                
+                mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
+                # magf = False
+                # while not magf:
+                #     mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
+                #     if mags >= 5.0 and mags <= 7.5:
+                #         magf = True
+
+                # depthf = False
+                # while not depthf:
+                #     depths = num.random.normal(row['depth'], 2 * coolingfac)
+                #     if depths > 0.0 and depths <= 10.0:
+                #         depthf = True
+                depths = num.random.normal(row['depth'], 2 * coolingfac)
+                if depths < 0.0:
+                    depths = 0.
+                elif depths > 10.0:
+                    depths = 10.
+
                 durationf = False
                 while not durationf:
                     durations = num.random.normal(row['duration'], 5 * coolingfac)
@@ -585,8 +600,10 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 # elif strikes < 0.0:
                 #     strikes += 360
 
-                hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
-                hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
+                # hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
+                # hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
+                hlon = row['lon']
+                hlat = row['lat']
                 # hlon = 0.
                 # hlat = 0.
 
@@ -665,8 +682,8 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
                 hypolonguess, hypolatguess)
         else:
             # coolingfac = num.sqrt(num.sqrt(1 / ii))
-            # coolingfac = num.sqrt(1 / ii)
-            coolingfac = 1 / ii
+            coolingfac = num.sqrt(1 / ii)
+            # coolingfac = 1 / ii
             # coolingfac = 2 / ii
             print(coolingfac)
             alldata, evalDF = iterative_params(bestDF, coords,
@@ -703,11 +720,13 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
         # bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
         bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
 
+        # bestDFall = pd.concat([bestDFall, bestDF], ignore_index=True)
+
         if plot:
             bidx = bestsrcparams.index[0]
             lenfac = len(coords)
             bestDFwv = allpredDF.iloc[bidx * lenfac: (bidx + 1) * lenfac]
-            fig, axs = plt.subplots(len(bestDFwv), 1, figsize=(16, 16), sharex=True)#, hspace=0.)
+            fig, axs = plt.subplots(len(bestDFwv), 1, figsize=(16, 32), sharex=True)#, hspace=0.)
             for ww in range(len(bestDFwv)):
                 axs[ww].plot(bestDFwv.iloc[ww], label='pred')
                 axs[ww].plot(refDF.iloc[ww], label='ref')
