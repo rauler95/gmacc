@@ -167,7 +167,8 @@ def create_random_source(sourcemode, ii=None, mag=None, lat=None, lon=None,
         width, length = GMu.calc_source_width_length(mag, mode='Blaser', rake=rake)
 
         vr = 0.8 * 3460
-        src = gf.RectangularSource(time=util.str_to_time('1995-01-29 13:00:00.0'),
+        src = gf.RectangularSource(
+                #time=util.str_to_time('1995-01-29 13:00:00.0'),
                 lat=lat, lon=lon, depth=depth * 1000., anchor=anchor,
                 strike=strike, dip=dip, rake=rake,
                 width=width * 1000., length=length * 1000.,
