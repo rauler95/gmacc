@@ -310,6 +310,10 @@ class PreprocessingWaveform(Preprocessing):
         default=1,
         help='Number of how many output parameter refer to the sign of the waveform. Either 0, 1 or 2.')
 
+    mp = Int.T(
+        default=0,
+        help='Enables multiprocessing for the number of cores, if value > 1.')
+
 
 class ObservationalData(GroundMotionData):
 

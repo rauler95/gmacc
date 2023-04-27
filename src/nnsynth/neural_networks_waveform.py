@@ -12,6 +12,7 @@ from gmacc.gmeval import util as GMu
 from gmacc.nnsynth import neural_networks as GMnn
 from gmacc.nnsynth import preprocessing as GMpre
 
+
 def read_addtional_information(filepath):
     adddict = {}
     with open(filepath) as f:
@@ -414,8 +415,8 @@ def get_NN_predwv(alldata, model, scalingDict, targets):
     allpredDF = rebuild_time_nn(allpredDF)
 
     # print(allpredDF)
-    allpredDF = allpredDF.diff(axis=1)
-    allpredDF = allpredDF.fillna(0)
+    # allpredDF = allpredDF.diff(axis=1)
+    # allpredDF = allpredDF.fillna(0)
     # allpredDF = allpredDF.drop(columns='0')
     # print(allpredDF)
     # exit()
@@ -467,10 +468,10 @@ def inital_random_params(num_srcs, coords, hypolonguess, hypolatguess):
 
     mag = num.random.uniform(5.0, 7.5, num_srcs)
     depth = num.random.uniform(0.1, 10., num_srcs)
-    # hypolon = num.random.normal(hypolonguess, 0.25, num_srcs)
-    # hypolat = num.random.normal(hypolatguess, 0.25, num_srcs)
-    hypolon = num.array([hypolonguess] * num_srcs)
-    hypolat = num.array([hypolatguess] * num_srcs)
+    hypolon = num.random.normal(hypolonguess, 0.25, num_srcs)
+    hypolat = num.random.normal(hypolatguess, 0.25, num_srcs)
+    # hypolon = num.array([hypolonguess] * num_srcs)
+    # hypolat = num.array([hypolatguess] * num_srcs)
 
     # print(hypolon)
     # exit()
@@ -556,24 +557,25 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 # hlat = 0.
             else:
 
-                mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
-                # magf = False
-                # while not magf:
-                #     mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
-                #     if mags >= 5.0 and mags <= 7.5:
-                #         magf = True
+                # mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
+                magf = False
+                while not magf:
+                    mags = num.random.normal(row['magnitude'], 0.2 * coolingfac)
+                    if mags >= 5.0 and mags <= 7.5:
+                        magf = True
 
-                # depthf = False
-                # while not depthf:
-                #     depths = num.random.normal(row['depth'], 2 * coolingfac)
-                #     if depths > 0.0 and depths <= 10.0:
-                #         depthf = True
-                depths = num.random.normal(row['depth'], 2 * coolingfac)
-                if depths < 0.0:
-                    depths = 0.
-                elif depths > 10.0:
-                    depths = 10.
+                # depths = num.random.normal(row['depth'], 2 * coolingfac)
+                depthf = False
+                while not depthf:
+                    depths = num.random.normal(row['depth'], 2 * coolingfac)
+                    if depths > 0.0 and depths <= 10.0:
+                        depthf = True
+                # if depths < 0.0:
+                #     depths = 0.
+                # elif depths > 10.0:
+                #     depths = 10.
 
+                # durations = num.random.normal(row['duration'], 5 * coolingfac)
                 durationf = False
                 while not durationf:
                     durations = num.random.normal(row['duration'], 5 * coolingfac)
@@ -591,19 +593,19 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 dipf = False
                 while not dipf:
                     dips = num.random.normal(row['dip'], 5 * coolingfac)
-                    if dips >= -180.0 and dips <= 180.:
+                    if dips >= 0.0 and dips <= 90.:
                         dipf = True
 
                 strikes = num.random.normal(row['strike'], 5 * coolingfac)
-                # if strikes > 360:
-                #     strikes -= 360
-                # elif strikes < 0.0:
-                #     strikes += 360
+                if strikes > 360:
+                    strikes -= 360
+                elif strikes < 0.0:
+                    strikes += 360
 
-                # hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
-                # hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
-                hlon = row['lon']
-                hlat = row['lat']
+                hlon = num.random.normal(row['lon'], 0.25 * coolingfac)
+                hlat = num.random.normal(row['lat'], 0.25 * coolingfac)
+                # hlon = row['lon']
+                # hlat = row['lat']
                 # hlon = 0.
                 # hlat = 0.
 
