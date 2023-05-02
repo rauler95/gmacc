@@ -176,8 +176,17 @@ def rmsccfreq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
     wvrms = mse(x, y)
-    idx2 = int(tf.shape(x)[0] / 2)
-    signrms = mse(x[[0, idx2]], y[[0, idx2]])
+    idx2 = tf.cast(tf.shape(x)[0] / 2, tf.int32)
+    print(idx2)
+    print(x[:, 0])
+    # print(x[:, [1, 2]])
+    # print(tf.gather(x,
+    #             indices=[:, [1,2]]))
+    print(tf.shape(x)[0], tf.shape(x)[1])
+    # print()
+    x2 = tf.gather_nd(x, indices=[[0], [tf.cast(tf.shape(x)[0] / 2, tf.int32)]])
+    y2 = tf.gather_nd(y, indices=[[0], [tf.cast(tf.shape(x)[0] / 2, tf.int32)]])
+    signrms = mse(x2, y2)
 
     r = correlationcoefficient(x, y)
     cc = (1 - r)**2
