@@ -165,7 +165,7 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
-def rmscc_freq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
+def rmsccfreq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
@@ -187,8 +187,8 @@ def rmscc_freq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
     return e
 
 
-def rmscc_freqw10w1w10w10(y_true, y_pred):
-    return rmscc_freq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=10)
+def rmsccw10w1w10freqw10(y_true, y_pred):
+    return rmsccfreq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=10)
 
 
 def rmscc_multiply(y_true, y_pred, numb):
@@ -494,8 +494,8 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmsccw10w1w10
     elif loss == 'rmsccw10w1w100':
         loss = rmsccw10w1w100
-    elif loss == 'rmscc_freqw10w1w10w10':
-        loss = rmscc_freqw10w1w10w10
+    elif loss == 'rmsccw10w1w10freqw10':
+        loss = rmsccw10w1w10freqw10
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -1017,7 +1017,7 @@ def load_model(file):
                         'rmsccw1w10w1': rmsccw1w10w1,
                         'rmsccw10w1w10': rmsccw10w1w10,
                         'rmsccw10w1w100': rmsccw10w1w100,
-                        'rmscc_freqw10w1w10w10': rmscc_freqw10w1w10w10,
+                        'rmsccw10w1w10freqw10': rmsccw10w1w10freqw10,
                         })
 
 
