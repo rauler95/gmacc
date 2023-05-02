@@ -165,6 +165,32 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
+def rmscc_freq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
+    import tensorflow.keras.losses as L
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    wvrms = mse(x, y)
+    idx2 = int(len(x) / 2)
+    signrms = mse(x[[0, idx2]], y[[0, idx2]])
+
+    r = correlationcoefficient(x, y)
+    cc = (1 - r)**2
+
+    e = (w1 * cc) + (w2 * rms) + (w3 * wvrms) + (w4 * signrms)
+
+    return e
+
+
+def rmscc_freqw10w1w10w10(y_true, y_pred):
+    return rmscc_freq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=10)
+
+
 def rmscc_multiply(y_true, y_pred, numb):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
@@ -467,7 +493,9 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
     elif loss == 'rmsccw10w1w10':
         loss = rmsccw10w1w10
     elif loss == 'rmsccw10w1w100':
-        loss = rmsccw10w1w100    
+        loss = rmsccw10w1w100
+    elif loss == 'rmscc_freqw10w1w10w10':
+        loss = rmscc_freqw10w1w10w10
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -613,9 +641,10 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
         if source.form == 'point':
             rrups = None
             rupazis = None
+            centreazis = None
         else:
             rrups = source.calc_distance(lons=lons, lats=lats, distType='rrup')
-            rupazis, _ = source.calc_rupture_azimuth(lons=lons, lats=lats)
+            rupazis, centreazis = source.calc_rupture_azimuth(lons=lons, lats=lats)
 
     else:
 
@@ -643,9 +672,10 @@ def prepare_NN_prediction_data(source, scalingDict, targets, inputcols, coords):
 
         rrups = None
         rupazis = None
+        centreazis = None
 
     data = setup_dataframe(source, scalingDict, inputcols,
-                    azis, r_hypos, rrups, rupazis, lenfac=len(coords))
+                    azis, r_hypos, rrups, rupazis, centreazis, lenfac=len(coords))
 
     return data
 
@@ -742,7 +772,7 @@ def get_NNdict(source, modelfile, suppfile, coords, targetsMain=None):
 ###
 
 def setup_dataframe(src, scaling_dict, inputcols,
-                    azis, r_hypos, rrups, rupazis, lenfac):
+                    azis, r_hypos, rrups, rupazis, centreazis, lenfac):
     data = {}
     for params in scaling_dict.keys():
         if params == 'azistrike':
@@ -804,16 +834,19 @@ def setup_dataframe(src, scaling_dict, inputcols,
         if params == 'rup_azimuth' or params == 'rup_azistrike':
             data['rup_azimuth'] = rupazis
 
+        if params == 'centre_azimuth':
+            data['centre_azimuth'] = centreazis
+
     data = pd.DataFrame(data)
     # data = GMpre.calc_azistrike(data)
     data = GMpre.calc_azistrike(data, strikecol='strike',
         azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
     dropcols = ['azimuth', 'strike']
 
-    if 'rup_azimuth' in data:
-        data = GMpre.calc_azistrike(data, strikecol='strike',
-            azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
-        dropcols.append('rup_azimuth')
+    # if 'rup_azimuth' in data:
+    #     data = GMpre.calc_azistrike(data, strikecol='strike',
+    #         azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
+    #     dropcols.append('rup_azimuth')
     data = data.drop(columns=dropcols)
     data = GMpre.convert_distances(data)
 
@@ -984,6 +1017,7 @@ def load_model(file):
                         'rmsccw1w10w1': rmsccw1w10w1,
                         'rmsccw10w1w10': rmsccw10w1w10,
                         'rmsccw10w1w100': rmsccw10w1w100,
+                        'rmscc_freqw10w1w10w10': rmscc_freqw10w1w10w10,
                         })
 
 

@@ -368,6 +368,95 @@ def rebuild_time_nn(data):
     return trueTr
 
 
+def rebuild_freq_nn(data, inversefft=True):
+
+    def inverse_rfft(ndata):
+        reals = ndata[:int(len(ndata) / 2)].values
+        imags = ndata[int(len(ndata) / 2):].values
+
+        # numidx = 10
+        # lenfac = len(reals[numidx:])
+        # rang = -num.logspace(-2, 10, lenfac)
+        # multfac = num.exp(rang)
+        # reals[numidx:] *= multfac
+        # imags[numidx:] *= multfac
+
+        predft = reals + 1j * imags
+        predvals = num.fft.irfft(predft)
+
+        return predvals
+
+    def own_filtering(ndata):
+
+        reals = ndata[:int(len(ndata) / 2)].values
+        imags = ndata[int(len(ndata) / 2):].values
+
+        numidx = 10
+        lenfac = len(reals[numidx:])
+        rang = -num.logspace(-2, 10, lenfac)
+        multfac = num.exp(rang)
+        reals[numidx:] *= multfac
+        imags[numidx:] *= multfac
+
+        values = num.append(reals, imags)
+
+        return values
+
+    cntstart = 0
+    addcol = []
+    if 'maxval' in data:
+        cntstart += 1
+        addcol.append('maxval')
+
+        trMax = (10**data['maxval'])
+
+    if 'maxval-sign' in data:
+        cntstart += 1
+        addcol.append('maxval-sign')
+
+    elif 'maxval-sign-pos' in data:
+        cntstart += 2
+        addcol.append('maxval-sign-pos')
+        addcol.append('maxval-sign-neg')
+
+        trSign = num.zeros(len(trMax))
+        trSign[data['maxval-sign-pos'] > data['maxval-sign-neg']] = 1
+        trSign[data['maxval-sign-pos'] < data['maxval-sign-neg']] = -1
+
+    selcols = [col for col in data.columns if col not in addcol]
+
+    trueTr = data[selcols]
+    if 'maxval' in data:
+        trueTr = trueTr.multiply(trMax, axis=0)
+
+    if 'maxval-sign-pos' in data:
+        trueTr = trueTr.multiply(trSign, axis=0)
+
+    if inversefft:
+        ntrueTr = trueTr.apply(lambda x: inverse_rfft(x), axis=1)
+        return ntrueTr
+
+    else:
+        # print(trueTr)
+        ntrueTr = trueTr.apply(lambda x: own_filtering(x), axis=1, result_type='expand')
+        # print()
+        # print(ntrueTr)
+        # print()
+        ntrueTr.columns = trueTr.columns
+        # print(ntrueTr)
+        # exit()
+        return ntrueTr
+
+
+def rebuild_nn(data, inversefft=True):
+    if 'reals_0' in data.columns:
+        trueTr = rebuild_freq_nn(data, inversefft=inversefft)
+    else:
+        trueTr = rebuild_time_nn(data)
+
+    return trueTr
+
+
 def prepare_NN_predf(coords, mag, strike, dip, rake, depth, duration,
         hypolon, hypolat):
 
@@ -412,7 +501,7 @@ def get_NN_predwv(alldata, model, scalingDict, targets):
     alldata = GMpre.convert_distances(alldata)
     alldata = GMpre.normalize(scalingDict, alldata, mode='forward')
     allpredDF = GMnn.get_predict_df(model, alldata, targets, batchsize=10000)
-    allpredDF = rebuild_time_nn(allpredDF)
+    allpredDF = rebuild_nn(allpredDF, inversefft=False)
 
     # print(allpredDF)
     # allpredDF = allpredDF.diff(axis=1)
@@ -564,10 +653,10 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                     if mags >= 5.0 and mags <= 7.5:
                         magf = True
 
-                # depths = num.random.normal(row['depth'], 2 * coolingfac)
+                # depths = num.random.normal(row['depth'], 1 * coolingfac)
                 depthf = False
                 while not depthf:
-                    depths = num.random.normal(row['depth'], 2 * coolingfac)
+                    depths = num.random.normal(row['depth'], 1 * coolingfac)
                     if depths > 0.0 and depths <= 10.0:
                         depthf = True
                 # if depths < 0.0:
@@ -575,28 +664,28 @@ def iterative_params(bestDF, coords, fac=10, coolingfac=1):
                 # elif depths > 10.0:
                 #     depths = 10.
 
-                # durations = num.random.normal(row['duration'], 5 * coolingfac)
+                # durations = num.random.normal(row['duration'], 3 * coolingfac)
                 durationf = False
                 while not durationf:
-                    durations = num.random.normal(row['duration'], 5 * coolingfac)
+                    durations = num.random.normal(row['duration'], 3 * coolingfac)
                     if durations > 0.0:
                         durationf = True
 
-                # rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                # rakes = num.random.normal(row['rake'], 2.5 * coolingfac)
                 rakef = False
                 while not rakef:
-                    rakes = num.random.normal(row['rake'], 5 * coolingfac)
+                    rakes = num.random.normal(row['rake'], 2.5 * coolingfac)
                     if rakes >= -180.0 and rakes <= 180.:
                         rakef = True
 
-                # dips = num.random.normal(row['dip'], 5 * coolingfac)
+                # dips = num.random.normal(row['dip'], 2.5 * coolingfac)
                 dipf = False
                 while not dipf:
-                    dips = num.random.normal(row['dip'], 5 * coolingfac)
+                    dips = num.random.normal(row['dip'], 2.5 * coolingfac)
                     if dips >= 0.0 and dips <= 90.:
                         dipf = True
 
-                strikes = num.random.normal(row['strike'], 5 * coolingfac)
+                strikes = num.random.normal(row['strike'], 3 * coolingfac)
                 if strikes > 360:
                     strikes -= 360
                 elif strikes < 0.0:
@@ -666,9 +755,7 @@ def nn_evaluation_score(x, y):
 def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestpercentage,
         hypolonguess, hypolatguess, coords, plotdir, plot=False):
 
-    # numselecttop = int(0.01 * num_srcs)
     numselecttop = int(bestpercentage * num_srcs)
-    # numselecttop = int(0.2 * num_srcs)
     searchfac = int(num_srcs / numselecttop)
     print(numselecttop, searchfac)
 
@@ -690,7 +777,6 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
             print(coolingfac)
             alldata, evalDF = iterative_params(bestDF, coords,
                searchfac, coolingfac=coolingfac)
-            # alldata = pd.concat(datas, ignore_index=True)
         print('Time-sources', time.time() - t1)
 
         t2 = time.time()
@@ -704,7 +790,8 @@ def own_inversion(refDF, model, scalingDict, targets, numiter, num_srcs, bestper
         # print(evalDF)
         evalDF['rms'] = rmss
         evalDF['cc'] = 1 - ccs
-        evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
+        # evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']
+        evalDF['rmscc'] = evalDF['cc'] * evalDF['rms']**2
         # evalDF['rmscc'] = evalDF['cc'] + (evalDF['rms'] * 10)
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) + evalDF['rms']
         # evalDF['rmscc'] = (10 * evalDF['cc']**2) * evalDF['rms']
