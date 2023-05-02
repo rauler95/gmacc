@@ -176,7 +176,7 @@ def rmscc_freq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
     wvrms = mse(x, y)
-    idx2 = int(len(x) / 2)
+    idx2 = int(tf.shape(x)[0] / 2)
     signrms = mse(x[[0, idx2]], y[[0, idx2]])
 
     r = correlationcoefficient(x, y)
