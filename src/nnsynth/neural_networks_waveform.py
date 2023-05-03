@@ -57,7 +57,7 @@ def nn_waveform_plots_none(predDF, yEval, outputdir):
     plt.close('all')
 
 
-def nn_waveform_plots_time(predDF, yEval, outputdir):
+def nn_waveform_plots_time(predDF, yEval, outputdir, appendix=''):
 
     cntstart = 0
     if 'maxval' in yEval:
@@ -121,12 +121,12 @@ def nn_waveform_plots_time(predDF, yEval, outputdir):
         ax2.plot(xvals, trMaxtrue * true[cntstart:], label='GF Ouput')
         ax2.set_title('Final result')
         plt.tight_layout()
-        plt.savefig(outputdir + '/wv_%s.png' % mm)
+        plt.savefig(outputdir + '/%swv_%s.png' % (appendix, mm))
 
     plt.close('all')
 
 
-def nn_waveform_plots_freq(predDF, yEval, outputdir):
+def nn_waveform_plots_freq(predDF, yEval, outputdir, appendix=''):
 
     cntstart = 0
     if 'maxval' in yEval:
@@ -175,7 +175,7 @@ def nn_waveform_plots_freq(predDF, yEval, outputdir):
         evalft = reals + 1j * imags
         evalvals = num.fft.irfft(evalft)
 
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(12, 6))
         ax = plt.subplot(2, 1, 1)
         ax.plot(pred[cntstart:], label='NN Predicted')
         ax.plot(true[cntstart:], label='GF Ouput')
@@ -212,7 +212,7 @@ def nn_waveform_plots_freq(predDF, yEval, outputdir):
         ax.legend(loc='best')
 
         plt.tight_layout()
-        plt.savefig(outputdir + '/wv_%s.png' % mm)
+        plt.savefig(outputdir + '/%swv_%s.png' % (appendix, mm))
 
     plt.close('all')
 

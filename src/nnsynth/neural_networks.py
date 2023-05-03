@@ -165,45 +165,6 @@ def ws3(y_true, y_pred):
     return ws_nums(y_true, y_pred, 3)
 
 
-def rmsccfreq(y_true, y_pred, numb, w1=10, w2=1, w3=1, w4=10):
-    import tensorflow.keras.losses as L
-    xs = y_true[:, :numb]
-    ys = y_pred[:, :numb]
-
-    x = y_true[:, numb:]
-    y = y_pred[:, numb:]
-
-    mse = L.MeanSquaredError()
-    rms = mse(xs, ys)
-    wvrms = mse(x, y)
-    idx2 = tf.cast(tf.shape(x)[0] / 2, tf.int32)
-    print(idx2)
-    print(x[:, 0])
-    # print(x[:, [1, 2]])
-    # print(tf.gather(x,
-    #             indices=[:, [1,2]]))
-    print(tf.shape(x)[0], tf.shape(x)[1])
-    # print()
-    x2 = tf.gather_nd(x, indices=[[0], [tf.cast(tf.shape(x)[0] / 2, tf.int32)]])
-    y2 = tf.gather_nd(y, indices=[[0], [tf.cast(tf.shape(x)[0] / 2, tf.int32)]])
-    signrms = mse(x2, y2)
-
-    r = correlationcoefficient(x, y)
-    cc = (1 - r)**2
-
-    e = (w1 * cc) + (w2 * rms) + (w3 * wvrms) + (w4 * signrms)
-
-    return e
-
-
-def rmsccw10w1w10freqw10(y_true, y_pred):
-    return rmsccfreq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=10)
-
-
-def rmsccw10w1w10freqw1(y_true, y_pred):
-    return rmsccfreq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=1)
-
-
 def rmscc_multiply(y_true, y_pred, numb):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
@@ -228,7 +189,7 @@ def rmscc1_multiply(y_true, y_pred):
     return rmscc_multiply(y_true, y_pred, 1)
 
 
-def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1):
+def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
@@ -240,8 +201,16 @@ def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1):
     rms = mse(xs, ys)
     wvrms = mse(x, y)
 
+    if log:
+        # wvrms = tf.math.log(wvrms)
+        wvrms = tf.experimental.numpy.log10(wvrms)
+
     r = correlationcoefficient(x, y)
-    cc = (1 - r)**2
+
+    if mode == 'square':
+        cc = (1 - r)**2
+    elif mode == 'euler':
+        cc = tf.math.exp(1.0) - tf.math.exp(r)
 
     e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
 
@@ -266,6 +235,30 @@ def rmsccw1w10w1(y_true, y_pred):
 
 def rmsccw10w1w10(y_true, y_pred):
     return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10)
+
+
+def rmsccw1w1w10euler(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=1, w2=1, w3=10, mode='euler')
+
+
+def rmsccw10w1w10euler(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler')
+
+
+def rmsccw1w1w10log(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=1, w2=1, w3=10, log=True)
+
+
+def rmsccw10w1w10log(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10, log=True)
+
+
+def rmsccw1w1w10eulerlog(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=1, w2=1, w3=10, mode='euler', log=True)
+
+
+def rmsccw10w1w10eulerlog(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler', log=True)
 
 
 def rmsccw10w1w100(y_true, y_pred):
@@ -505,10 +498,20 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmsccw1w10w1
     elif loss == 'rmsccw10w1w10':
         loss = rmsccw10w1w10
+    elif loss == 'rmsccw10w1w10euler':
+        loss = rmsccw10w1w10euler
+    elif loss == 'rmsccw1w1w10euler':
+        loss = rmsccw1w1w10euler
+    elif loss == 'rmsccw10w1w10eulerlog':
+        loss = rmsccw10w1w10eulerlog
+    elif loss == 'rmsccw1w1w10eulerlog':
+        loss = rmsccw1w1w10eulerlog
+    elif loss == 'rmsccw10w1w10log':
+        loss = rmsccw10w1w10log
+    elif loss == 'rmsccw1w1w10log':
+        loss = rmsccw1w1w10log
     elif loss == 'rmsccw10w1w100':
         loss = rmsccw10w1w100
-    elif loss == 'rmsccw10w1w10freqw10':
-        loss = rmsccw10w1w10freqw10
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -1029,8 +1032,9 @@ def load_model(file):
                         'rmsccw100w1w1': rmsccw100w1w1,
                         'rmsccw1w10w1': rmsccw1w10w1,
                         'rmsccw10w1w10': rmsccw10w1w10,
+                        'rmsccw10w1w10euler': rmsccw10w1w10euler,
+                        'rmsccw1w1w10euler': rmsccw1w1w10euler,
                         'rmsccw10w1w100': rmsccw10w1w100,
-                        'rmsccw10w1w10freqw10': rmsccw10w1w10freqw10,
                         })
 
 
@@ -1772,7 +1776,10 @@ class CombinedCallback(tf.keras.callbacks.Callback):
             for key in self.lossdict.keys():
                 # if 'loss' in key:
                 #     continue
-                ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                if sum(num.negative(self.lossdict[key])) > 0:
+                    ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                else:
+                    ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
 
             ax.axvline(x=self.best_epoch, color='red', linestyle='--',
                        label='Best Epoch: %s' % self.best_epoch)
@@ -1802,7 +1809,10 @@ class CombinedCallback(tf.keras.callbacks.Callback):
         for key in self.lossdict.keys():
             # if 'loss' in key:
             #     continue
-            ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+            if sum(num.negative(self.lossdict[key])) > 0:
+                ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+            else:
+                ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
 
         ax.axvline(x=self.best_epoch, color='red', linestyle='--',
                    label='Best Epoch: %s' % self.best_epoch)
