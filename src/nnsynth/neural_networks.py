@@ -200,6 +200,10 @@ def rmsccw10w1w10freqw10(y_true, y_pred):
     return rmsccfreq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=10)
 
 
+def rmsccw10w1w10freqw1(y_true, y_pred):
+    return rmsccfreq(y_true, y_pred, 1, w1=10, w2=1, w3=10, w4=1)
+
+
 def rmscc_multiply(y_true, y_pred, numb):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
