@@ -1034,6 +1034,10 @@ def load_model(file):
                         'rmsccw10w1w10': rmsccw10w1w10,
                         'rmsccw10w1w10euler': rmsccw10w1w10euler,
                         'rmsccw1w1w10euler': rmsccw1w1w10euler,
+                        'rmsccw10w1w10eulerlog': rmsccw10w1w10eulerlog,
+                        'rmsccw1w1w10eulerlog': rmsccw1w1w10eulerlog,
+                        'rmsccw10w1w10log': rmsccw10w1w10log,
+                        'rmsccw1w1w10log': rmsccw1w1w10log,
                         'rmsccw10w1w100': rmsccw10w1w100,
                         })
 
