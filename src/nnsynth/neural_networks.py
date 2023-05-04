@@ -189,6 +189,114 @@ def rmscc1_multiply(y_true, y_pred):
     return rmscc_multiply(y_true, y_pred, 1)
 
 
+def logmse(y_true, y_pred):
+    import tensorflow.keras.losses as L
+    numb = 1
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
+    y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
+
+    x = tf.where(x != -num.inf, x, -4)
+    y = tf.where(y != -num.inf, y, -4)
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    wvrms = mse(x, y)
+
+    e = rms + wvrms
+
+    return e
+
+
+def mselog(y_true, y_pred):
+    import tensorflow.keras.losses as L
+    numb = 1
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    # wvrms = mse(x, y)
+    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+
+    e = rms + wvrms
+
+    return e
+
+
+def logmsecc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
+    import tensorflow.keras.losses as L
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
+    y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
+
+    x = tf.where(x != -num.inf, x, -4)
+    y = tf.where(y != -num.inf, y, -4)
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    wvrms = mse(x, y)
+
+    if log:
+        # wvrms = tf.math.log(wvrms)
+        wvrms = tf.experimental.numpy.log10(wvrms)
+
+    r = correlationcoefficient(x, y)
+
+    if mode == 'square':
+        cc = (1 - r)**2
+    elif mode == 'euler':
+        cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
+
+    return e
+
+
+def logmseccw10w1w10euler(y_true, y_pred):
+    return logmsecc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler')
+
+
+def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
+    import tensorflow.keras.losses as L
+    xs = y_true[:, :numb]
+    ys = y_pred[:, :numb]
+
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
+
+    mse = L.MeanSquaredError()
+    rms = mse(xs, ys)
+    # wvrms = mse(x, y)
+    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+
+    if log:
+        # wvrms = tf.math.log(wvrms)
+        wvrms = tf.experimental.numpy.log10(wvrms)
+
+    r = correlationcoefficient(x, y)
+
+    if mode == 'square':
+        cc = (1 - r)**2
+    elif mode == 'euler':
+        cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
+
+    return e
+
+
+def mselogccw10w1w10euler(y_true, y_pred):
+    return mselogcc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler')
+
+
 def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
@@ -512,6 +620,15 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmsccw1w1w10log
     elif loss == 'rmsccw10w1w100':
         loss = rmsccw10w1w100
+
+    elif loss == 'mselog':
+        loss = mselog
+    elif loss == 'logmse':
+        loss = logmse
+    elif loss == 'logmseccw10w1w10euler':
+        loss = logmseccw10w1w10euler
+    elif loss == 'mselogccw10w1w10euler':
+        loss = mselogccw10w1w10euler
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -1039,8 +1156,11 @@ def load_model(file):
                         'rmsccw10w1w10log': rmsccw10w1w10log,
                         'rmsccw1w1w10log': rmsccw1w1w10log,
                         'rmsccw10w1w100': rmsccw10w1w100,
+                        'mselog': mselog,
+                        'logmse': logmse,
+                        'logmseccw10w1w10euler': logmseccw10w1w10euler,
+                        'mselogccw10w1w10euler': mselogccw10w1w10euler,
                         })
-
 
 # def load_scalingdict(file):
 #     print(file)
