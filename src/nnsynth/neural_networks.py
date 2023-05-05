@@ -201,11 +201,13 @@ def logmse(y_true, y_pred):
 
     tf.print(x)
     # print(x)
-
-    x = tf.where(x != -num.inf, x, -4)
-    x = tf.where(x != num.inf, x, -4)
-    y = tf.where(y != -num.inf, y, -4)
-    y = tf.where(y != num.inf, y, -4)
+    
+    x = tf.where(tf.math.is_finite(x), x, -4)
+    y = tf.where(tf.math.is_finite(y), x, -4)
+    # x = tf.where(x != -num.inf, x, -4)
+    # x = tf.where(x != num.inf, x, -4)
+    # y = tf.where(y != -num.inf, y, -4)
+    # y = tf.where(y != num.inf, y, -4)
     # y = tf.where(y == -num.inf, -4, y)
 
     tf.print(x)
