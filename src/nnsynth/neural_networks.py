@@ -199,7 +199,7 @@ def logmse(y_true, y_pred):
     x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
     y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
 
-    # tf.print(x)
+    tf.print(x)
     # print(x)
 
     x = tf.where(x != -num.inf, x, -4)
@@ -208,7 +208,7 @@ def logmse(y_true, y_pred):
     y = tf.where(y != num.inf, y, -4)
     # y = tf.where(y == -num.inf, -4, y)
 
-    # tf.print(x)
+    tf.print(x)
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -233,9 +233,9 @@ def mselog(y_true, y_pred):
     # wvrms = mse(x, y)
     # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
     wvrms = tf.math.abs(x - y)
-    tf.print('first', wvrms)
+    # tf.print('first', wvrms)
     wvrms = tf.where(wvrms != 0, wvrms, 0.00001)
-    tf.print('second', wvrms)
+    # tf.print('second', wvrms)
     wvrms = tf.experimental.numpy.log10(wvrms)
 
     e = rms + wvrms
