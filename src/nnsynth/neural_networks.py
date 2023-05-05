@@ -199,18 +199,8 @@ def logmse(y_true, y_pred):
     x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
     y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
 
-    tf.print(x)
-    # print(x)
-    
     x = tf.where(tf.math.is_finite(x), x, -4)
     y = tf.where(tf.math.is_finite(y), x, -4)
-    # x = tf.where(x != -num.inf, x, -4)
-    # x = tf.where(x != num.inf, x, -4)
-    # y = tf.where(y != -num.inf, y, -4)
-    # y = tf.where(y != num.inf, y, -4)
-    # y = tf.where(y == -num.inf, -4, y)
-
-    tf.print(x)
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -235,9 +225,7 @@ def mselog(y_true, y_pred):
     # wvrms = mse(x, y)
     # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
     wvrms = tf.math.abs(x - y)
-    # tf.print('first', wvrms)
     wvrms = tf.where(wvrms != 0, wvrms, 0.00001)
-    # tf.print('second', wvrms)
     wvrms = tf.experimental.numpy.log10(wvrms)
 
     e = rms + wvrms
@@ -253,8 +241,8 @@ def logmsecc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
     y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
 
-    x = tf.where(x != -num.inf, x, -4)
-    y = tf.where(y != -num.inf, y, -4)
+    x = tf.where(tf.math.is_finite(x), x, -4)
+    y = tf.where(tf.math.is_finite(y), x, -4)
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -291,7 +279,10 @@ def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
     # wvrms = mse(x, y)
-    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+    # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+    wvrms = tf.math.abs(x - y)
+    wvrms = tf.where(wvrms != 0, wvrms, 0.00001)
+    wvrms = tf.experimental.numpy.log10(wvrms)
 
     if log:
         # wvrms = tf.math.log(wvrms)
