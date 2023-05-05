@@ -191,6 +191,7 @@ def rmscc1_multiply(y_true, y_pred):
 
 def logmse(y_true, y_pred):
     import tensorflow.keras.losses as L
+    tf.compat.v1.enable_eager_execution()
     numb = 1
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
@@ -198,8 +199,16 @@ def logmse(y_true, y_pred):
     x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
     y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
 
+    tf.print(x)
+    # print(x)
+
     x = tf.where(x != -num.inf, x, -4)
+    x = tf.where(x != num.inf, x, -4)
     y = tf.where(y != -num.inf, y, -4)
+    y = tf.where(y != num.inf, y, -4)
+    # y = tf.where(y == -num.inf, -4, y)
+
+    tf.print(x)
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
@@ -222,7 +231,8 @@ def mselog(y_true, y_pred):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
     # wvrms = mse(x, y)
-    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+    # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
+    wvrms = tf.experimental.numpy.log10(tf.math.abs(x - y))
 
     e = rms + wvrms
 
@@ -1900,10 +1910,12 @@ class CombinedCallback(tf.keras.callbacks.Callback):
             for key in self.lossdict.keys():
                 # if 'loss' in key:
                 #     continue
+                ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
                 if sum(num.negative(self.lossdict[key])) > 0:
-                    ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                    ax.set_yscale('linear')
                 else:
-                    ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                    ax.set_yscale('log')
+                    # ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
 
             ax.axvline(x=self.best_epoch, color='red', linestyle='--',
                        label='Best Epoch: %s' % self.best_epoch)
@@ -1933,10 +1945,12 @@ class CombinedCallback(tf.keras.callbacks.Callback):
         for key in self.lossdict.keys():
             # if 'loss' in key:
             #     continue
+            ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
             if sum(num.negative(self.lossdict[key])) > 0:
-                ax.plot(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                ax.set_yscale('linear')
             else:
-                ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
+                ax.set_yscale('log')
+                # ax.semilogy(self.lossdict[key], label=' %s (min=%0.7f)' % (key, min(self.lossdict[key])))
 
         ax.axvline(x=self.best_epoch, color='red', linestyle='--',
                    label='Best Epoch: %s' % self.best_epoch)
