@@ -287,10 +287,10 @@ def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
     # wvrms = mse(x, y)
-    # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
     wvrms = tf.math.abs(x - y)
     wvrms = tf.where(wvrms != 0, wvrms, 0.00001)
-    wvrms = tf.experimental.numpy.log10(wvrms)
+    # wvrms = tf.math.reduce_mean(tf.experimental.numpy.log10(wvrms))
+    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(wvrms)))
 
     if log:
         # wvrms = tf.math.log(wvrms)
