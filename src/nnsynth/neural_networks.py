@@ -226,7 +226,8 @@ def mselog(y_true, y_pred):
     # wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(tf.math.abs(x - y))))
     wvrms = tf.math.abs(x - y)
     wvrms = tf.where(wvrms != 0, wvrms, 0.00001)
-    wvrms = tf.experimental.numpy.log10(wvrms)
+    # wvrms = tf.experimental.numpy.log10(wvrms)
+    wvrms = tf.math.reduce_mean(tf.math.square(tf.experimental.numpy.log10(wvrms)))
 
     e = rms + wvrms
 
@@ -238,15 +239,20 @@ def logmsecc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     xs = y_true[:, :numb]
     ys = y_pred[:, :numb]
 
-    x = tf.experimental.numpy.log10(tf.math.abs(y_true[:, numb:]))
-    y = tf.experimental.numpy.log10(tf.math.abs(y_pred[:, numb:]))
+    x = y_true[:, numb:]
+    y = y_pred[:, numb:]
 
-    x = tf.where(tf.math.is_finite(x), x, -4)
-    y = tf.where(tf.math.is_finite(y), x, -4)
+    xmod = tf.experimental.numpy.log10(tf.math.abs(x))
+    ymod = tf.experimental.numpy.log10(tf.math.abs(y))
+
+    xmod = tf.where(tf.math.is_finite(xmod), xmod, -4)
+    ymod = tf.where(tf.math.is_finite(ymod), ymod, -4)
 
     mse = L.MeanSquaredError()
     rms = mse(xs, ys)
-    wvrms = mse(x, y)
+    wvrms = mse(xmod, ymod)
+
+    # wvrms = tf.pow(10., wvrms)
 
     if log:
         # wvrms = tf.math.log(wvrms)
@@ -259,6 +265,10 @@ def logmsecc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     elif mode == 'euler':
         cc = tf.math.exp(1.0) - tf.math.exp(r)
 
+    # tf.print('\n')
+    # tf.print(cc)
+    # tf.print(rms)
+    # tf.print(wvrms)
     e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
 
     return e
@@ -302,6 +312,11 @@ def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
         cc = (1 - r)**2
     elif mode == 'euler':
         cc = tf.math.exp(1.0) - tf.math.exp(r)
+
+    # tf.print('\n')
+    # tf.print(cc)
+    # tf.print(rms)
+    # tf.print(wvrms)
 
     e = (w1 * cc) + (w2 * rms) + (w3 * wvrms)
 
