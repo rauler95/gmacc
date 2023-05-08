@@ -268,6 +268,14 @@ def logmseccw10w1w10euler(y_true, y_pred):
     return logmsecc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler')
 
 
+def logmseccw10w1w1euler(y_true, y_pred):
+    return logmsecc(y_true, y_pred, 1, w1=10, w2=1, w3=1, mode='euler')
+
+
+def logmseccw10w1w100euler(y_true, y_pred):
+    return logmsecc(y_true, y_pred, 1, w1=10, w2=1, w3=100, mode='euler')
+
+
 def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
     import tensorflow.keras.losses as L
     xs = y_true[:, :numb]
@@ -302,6 +310,14 @@ def mselogcc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
 
 def mselogccw10w1w10euler(y_true, y_pred):
     return mselogcc(y_true, y_pred, 1, w1=10, w2=1, w3=10, mode='euler')
+
+
+def mselogccw10w1w1euler(y_true, y_pred):
+    return mselogcc(y_true, y_pred, 1, w1=10, w2=1, w3=1, mode='euler')
+
+
+def mselogccw10w1w100euler(y_true, y_pred):
+    return mselogcc(y_true, y_pred, 1, w1=10, w2=1, w3=100, mode='euler')
 
 
 def rmscc(y_true, y_pred, numb, w1=10, w2=1, w3=1, mode='square', log=False):
@@ -634,8 +650,16 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = logmse
     elif loss == 'logmseccw10w1w10euler':
         loss = logmseccw10w1w10euler
+    elif loss == 'logmseccw10w1w1euler':
+        loss = logmseccw10w1w1euler
+    elif loss == 'logmseccw10w1w100euler':
+        loss = logmseccw10w1w100euler
     elif loss == 'mselogccw10w1w10euler':
         loss = mselogccw10w1w10euler
+    elif loss == 'mselogccw10w1w1euler':
+        loss = mselogccw10w1w1euler
+    elif loss == 'mselogccw10w1w100euler':
+        loss = mselogccw10w1w100euler
 
     model.compile(loss=loss,
                 optimizer=optimizer)  # 'msle' # 'accuracy'
@@ -1166,7 +1190,11 @@ def load_model(file):
                         'mselog': mselog,
                         'logmse': logmse,
                         'logmseccw10w1w10euler': logmseccw10w1w10euler,
+                        'logmseccw10w1w1euler': logmseccw10w1w1euler,
+                        'logmseccw10w1w100euler': logmseccw10w1w100euler,
                         'mselogccw10w1w10euler': mselogccw10w1w10euler,
+                        'mselogccw10w1w1euler': mselogccw10w1w1euler,
+                        'mselogccw10w1w100euler': mselogccw10w1w100euler,
                         })
 
 # def load_scalingdict(file):
