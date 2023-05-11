@@ -383,6 +383,18 @@ def rmsccw10w1w10(y_true, y_pred):
     return rmscc(y_true, y_pred, 1, w1=10, w2=1, w3=10)
 
 
+def rmsccw10w10w10euler(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=10, w3=10, mode='euler')
+
+
+def rmsccw1w1w1euler(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=1, w2=1, w3=1, mode='euler')
+
+
+def rmsccw10w100w10euler(y_true, y_pred):
+    return rmscc(y_true, y_pred, 1, w1=10, w2=100, w3=10, mode='euler')
+
+
 def rmsccw1w1w10euler(y_true, y_pred):
     return rmscc(y_true, y_pred, 1, w1=1, w2=1, w3=10, mode='euler')
 
@@ -638,6 +650,12 @@ def get_compiled_tensorflow_model(layers, activation='relu', solver='adam',
         loss = rmscc3
     elif loss == 'rmsccw10w1w1':
         loss = rmsccw10w1w1
+    elif loss == 'rmsccw10w10w10euler':
+        loss = rmsccw10w10w10euler
+    elif loss == 'rmsccw10w100w10euler':
+        loss = rmsccw10w100w10euler
+    elif loss == 'rmsccw1w1w1euler':
+        loss = rmsccw1w1w1euler
     elif loss == 'rmsccw100w1w1':
         loss = rmsccw100w1w1
     elif loss == 'rmsccw1w10w1':
@@ -1193,6 +1211,9 @@ def load_model(file):
                         'rmscc3': rmscc3,
                         'rmsccw10w1w1': rmsccw10w1w1,
                         'rmsccw100w1w1': rmsccw100w1w1,
+                        'rmsccw10w10w10euler': rmsccw10w10w10euler,
+                        'rmsccw1w1w1euler': rmsccw1w1w1euler,
+                        'rmsccw10w100w10euler': rmsccw10w100w10euler,
                         'rmsccw1w10w1': rmsccw1w10w1,
                         'rmsccw10w1w10': rmsccw10w1w10,
                         'rmsccw10w1w10euler': rmsccw10w1w10euler,
