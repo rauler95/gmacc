@@ -183,15 +183,8 @@ def calculate_wv(ii, args, mapextent, ncords, mapping):
         mapCoords = GMu.downsampling_mapping(source,
             mapextent=mapextent, ncoords=ncords, log=True)
     elif mapping == 'mixed':
-        rng = num.random.rand(1)[0]
-        threshold = 0.85
-        if rng > threshold:
-            mapCoords = GMu.quasirandom_mapping(source, mapextent=mapextent, ncoords=ncords)
-        elif rng < threshold:
-            mapCoords = GMu.random_circular_mapping(source, mapextent=mapextent, rmin=0.05, ncoords=ncords, log=True)
-        else:
-            print('rnd doesnt not func')
-            exit()
+        mapCoords = GMu.mixed(source,
+            mapextent=mapextent, ncoords=ncords, threshold=0.5)
     
     else:
         print('Wrong mapping: %s' % (mapping))
