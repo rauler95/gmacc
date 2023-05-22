@@ -683,6 +683,7 @@ def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log
         # aziType = 'rup'
 
     incoords = ncoords * 5
+    # incoords = ncoords * 3
 
     # coords = GMu.rectangular_mapping(source, mapextent, incoords)
     # coords = GMu.quasirandom_mapping(source, mapextent, incoords)
@@ -792,10 +793,10 @@ def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log
                 exit()
             rmidxs += rmidx
 
-    print(len(dists), len(azis))
+    # print(len(dists), len(azis))
     dists = num.delete(dists, rmidxs)
     azis = num.delete(azis, rmidxs)
-    print(len(dists), len(azis))
+    # print(len(dists), len(azis))
 
     lats = num.delete(lats, rmidxs)
     lons = num.delete(lons, rmidxs)
@@ -816,5 +817,20 @@ def downsampling_MT_mapping(source, mapextent=[1, 1], ncoords=10, rmin=0.05, log
     # fig.savefig('/home/lehmann/dr/plots/grid_sampling_test_downsampling_after.png')
 
     coords = num.array([lons, lats]).T
+
+    return coords
+
+
+def mixed(source, mapextent=[1, 1], ncoords=10, rmin=0.05, threshold=0.5):
+    rng = num.random.rand(1)[0]
+
+    threshold = 0.5
+    if rng > threshold:
+        coords = downsampling_mapping(source, mapextent=mapextent, ncoords=ncoords, rmin=rmin, log=False)
+    elif rng < threshold:
+        coords = downsampling_mapping(source, mapextent=mapextent, ncoords=ncoords, rmin=rmin, log=True)
+    else:
+        print('rnd doesnt not func')
+        exit()
 
     return coords

@@ -19,20 +19,21 @@ import gmacc.gmeval.sources as GMs
 #############################
 ### Plot functions
 #############################
-def owncolorbar(mappable, fig, ax, label=[], ticks=[], side='right'):
+def owncolorbar(mappable, fig, ax, label=[], ticks=[], side='right', labelsize=13):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes(side, size="5%", pad=0.05)
 
     if ticks != [] and len(ticks) < 20:
-        cbar = fig.colorbar(mappable, cax=cax, label=label, ticks=ticks)
+        cbar = fig.colorbar(mappable, cax=cax, ticks=ticks)
     else:
-        cbar = fig.colorbar(mappable, cax=cax, label=label)
+        cbar = fig.colorbar(mappable, cax=cax)
 
     if side == 'left':
         cbar.ax.yaxis.set_ticks_position('left')
         cbar.ax.yaxis.set_label_position('left')
 
-    cbar.ax.tick_params(labelsize=10) 
+    cbar.set_label(label=label, size=labelsize)
+    cbar.ax.tick_params(labelsize=labelsize) 
 
     return
 
@@ -520,10 +521,31 @@ def plot_gm_map_alternative(source, predDict, obsDict=[], resDict=[], mapextent=
                         size[size < minsize] = minsize
                         # print(num.abs(residuum))
                         # print(size)
-                        sc = m.scatter(refx, refy,
+
+                        print('YEESSSAA')
+
+                        # sc = m.scatter(refx, refy,
+                        #         # s=markersize,
+                        #         s=size,
+                        #         c=residuum,
+                        #         cmap=cmapdiffname, zorder=20.,
+                        #         vmin=min(reslevel), vmax=max(reslevel))
+
+                        idxs1 = [residuum >= 0]
+                        idxs2 = [residuum < 0]
+                        sc = m.scatter(refx[idxs1], refy[idxs1],
                                 # s=markersize,
-                                s=size,
-                                c=residuum,
+                                s=size[idxs1],
+                                c=residuum[idxs1],
+                                marker='x',
+                                cmap=cmapdiffname, zorder=20.,
+                                vmin=min(reslevel), vmax=max(reslevel))
+
+                        sc = m.scatter(refx[idxs2], refy[idxs2],
+                                # s=markersize,
+                                s=size[idxs2],
+                                c=residuum[idxs2],
+                                marker='+',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -968,7 +990,7 @@ def plot_1d_alternative(source, obsDict, resDict, mode='dist', distType='hypo', 
 
 def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 savename='gm_map', figtitle=None, figtitlesize=16,
-                cmapname='afmhot_r', fontsize=10,
+                cmapname='afmhot_r', fontsize=10, subfontsize=13,
                 # cmapdiffname='twilight_shifted',
                 cmapdiffname='bwr',
                 markersize=200., reslevel=None,
@@ -1170,8 +1192,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         num.round(source.lat, roundval),
                         num.round(upperLat - dLat, roundval)]
 
-            # coordfontsize = 15
-            coordfontsize = 10
+            coordfontsize = subfontsize
             if compCnt + 1 == len(predDict) or plotgmvise or plotindi:
                 m.drawmeridians(mers,
                                 labels=[0, 0, 0, 1], fontsize=coordfontsize)  # , rotation=90.)
@@ -1335,7 +1356,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                     else:
                         strapp = ''
                     if gm == 'pga':
-                        label = '% g%s' % strapp
+                        label = '%% g%s' % strapp
                     elif gm == 'pgv':
                         label = 'cm/s%s' % strapp
                     elif gm == 'pgd':
@@ -1468,13 +1489,41 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                         size[size < minsize] = minsize
                         # print(num.abs(residuum))
                         # print(size)
-                        sc = m.scatter(refx, refy,
+                        print('YEESSSAA')
+
+                        # sc = m.scatter(refx, refy,
+                        #         # s=markersize,
+                        #         s=size,
+                        #         c=residuum,
+                        #         cmap=cmapdiffname, zorder=20.,
+                        #         vmin=min(reslevel), vmax=max(reslevel))
+
+                        refx = num.array(refx)
+                        refy = num.array(refy)
+
+                        idxs1 = [residuum >= 0]
+                        idxs2 = [residuum < 0]
+                        sc = m.scatter(refx[idxs1], refy[idxs1],
                                 # s=markersize,
-                                s=size,
-                                c=residuum, 
-                                #edgecolor='black',
+                                s=size[idxs1],
+                                c=residuum[idxs1],
+                                marker='o',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
+
+                        sc = m.scatter(refx[idxs2], refy[idxs2],
+                                # s=markersize,
+                                s=size[idxs2],
+                                c=residuum[idxs2],
+                                marker='x',
+                                cmap=cmapdiffname, zorder=20.,
+                                vmin=min(reslevel), vmax=max(reslevel))
+
+                        if n == 0 and showcbar:
+                            owncolorbar(sc, fig=fig, ax=ax,
+                                        label='Difference [log10]',
+                                        ticks=ticks,
+                                        side='right')
 
                         if n == 0 and showcbar:
                             owncolorbar(sc, fig=fig, ax=ax,
@@ -1568,7 +1617,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
 
 def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             savename='gm_diagram', figtitle=None, valmode='log', 
-            fontsize=10,
+            fontsize=10, subfontsize=15,
             plotgmvise=False, plotindi=False):
     source = resCont.refSource
 
@@ -1882,6 +1931,11 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 for item in (items):
                     item.set_fontsize(fontsize)
 
+                items2 = [ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()
+                ax.yaxis.label.set_fontsize(subfontsize)
+                for item in items2:
+                    item.set_fontsize(subfontsize)
+
             fig.add_subplot(ax1)
             fig.add_subplot(ax2)
 
@@ -1899,7 +1953,7 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
             lines2, labels2 = ax2.get_legend_handles_labels()
             ax1.legend(lines + lines2, labels + labels2)
             plt.suptitle(figtitle)
-            outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
+            outer.tight_layout(fig, rect=[0., 0., 1., 1.])
             if savename != [] and savename != '':
                 fig.savefig('%s_%s.png' % (savename, gm))
 
@@ -1908,7 +1962,7 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
         # lines2, labels2 = ax2.get_legend_handles_labels()
         # ax1.legend(lines + lines2, labels + labels2)
 
-        ax1.legend(fontsize=10)
+        ax1.legend(fontsize=subfontsize)
         # from matplotlib.legend_handler import HandlerTuple
         from matplotlib.legend_handler import HandlerBase
 
@@ -1920,15 +1974,17 @@ def plot_1d(obsCont, resCont, mode='dist', distType='hypo', aziType='hypo',
                 l2 = plt.Line2D([x0, y0 + width], [0.25 * height, 0.25 * height],
                     linestyle=orig_handle[3], color=orig_handle[2])
                 return [l1, l2]
+
         if valmode == 'log':        
             ax2.legend([(mup[0].get_color(), mup[0].get_linestyle(),
                     sigmap[0].get_color(), sigmap[0].get_linestyle()),
                     gmpep], ['PWS μ, σ', 'μ=0; σ=0.3'],
-                loc='upper left',
-                handler_map={tuple: AnyObjectHandler()}, fontsize=10)
+                loc='lower center',
+                handler_map={tuple: AnyObjectHandler()}, fontsize=subfontsize,
+                bbox_to_anchor=(0.5, -0.1))
 
         plt.suptitle(figtitle)
-        outer.tight_layout(fig, rect=[0., 0., 1., 0.98])
+        outer.tight_layout(fig, rect=[0., 0., 1., 1.])
         if savename != [] and savename != '':
             fig.savefig('%s.png' % (savename))
 
