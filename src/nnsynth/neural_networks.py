@@ -1028,10 +1028,10 @@ def setup_dataframe(src, scaling_dict, inputcols,
         if params == 'rrup':
             data['rrup'] = rrups
 
-        if params == 'rup_azimuth' or params == 'rup_azistrike':
+        if params == 'rup_azimuth' or params == 'rupazistrike':
             data['rup_azimuth'] = rupazis
 
-        if params == 'centre_azimuth':
+        if params == 'centre_azimuth' or params == 'centreazistrike':
             data['centre_azimuth'] = centreazis
 
     data = pd.DataFrame(data)
@@ -1040,10 +1040,16 @@ def setup_dataframe(src, scaling_dict, inputcols,
         azimuthcol='azimuth', azistrikecol='azistrike', delete=False)
     dropcols = ['azimuth', 'strike']
 
-    # if 'rup_azimuth' in data:
-    #     data = GMpre.calc_azistrike(data, strikecol='strike',
-    #         azimuthcol='rup_azimuth', azistrikecol='rup_azistrike', delete=False)
-    #     dropcols.append('rup_azimuth')
+    if 'rup_azimuth' in data:
+        data = GMpre.calc_azistrike(data, azimuthcol='rup_azimuth', azistrikecol='rupazistrike', delete=False)
+        if 'rup_azimuth' not in scaling_dict.keys():
+            dropcols.append('rup_azimuth')
+
+    if 'centre_azimuth' in data:
+        data = GMpre.calc_azistrike(data, azimuthcol='centre_azimuth', azistrikecol='centreazistrike', delete=False)
+        if 'centre_azimuth' not in scaling_dict.keys():
+            dropcols.append('centre_azimuth')
+
     data = data.drop(columns=dropcols)
     data = GMpre.convert_distances(data)
 
@@ -1055,6 +1061,8 @@ def setup_dataframe(src, scaling_dict, inputcols,
         cols = [col for col in scaling_dict.keys() if col in data.columns]
     data = data[cols]
 
+    print(data)
+    print(data.columns)
     return data
 
 

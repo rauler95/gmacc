@@ -1,0 +1,15 @@
+--- !gmacc.config.GroundMotionData
+config_path: ''
+comps: ['Z']
+rotd100: False
+gf: '/home/lehmann/dr/pyrocko_gf/own_2hz_distant/'
+imts: ['pgd']
+sourcemode: MT
+mappoints: 20
+mapextent:
+- 2.0
+- 2.0
+mapmode: rectangular
+
+outdir: '.'
+# filterfrequencies: ['None', 0.5]

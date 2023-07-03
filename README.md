@@ -1,5 +1,5 @@
 # Ground Motion prediction ACCelerated (gmacc)
-This is the supplement for the publication xxxx by L. Lehmann et al.
+This is the supplement code and examples for the publication by L. Lehmann et al. 2023 (https://doi.org/10.1093/gji/ggad239)
 
 This source code was produced during the doctoral studies of Lukas Lehmann at the University of Potsdam within the scope of the EWRICA project (funded by BMBF).
 

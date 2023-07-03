@@ -124,7 +124,7 @@ def get_waveform_data(path):
 ###
 
 
-def get_event_data(file):
+def get_event_data(file, moment_conversion=False):
     if os.path.exists(file) and not os.stat(file).st_size < 1:
         pass
     else:
@@ -133,7 +133,7 @@ def get_event_data(file):
 
     source = convert_quakeml_to_source(file)
 
-    if hasattr(source, 'moment'):
+    if hasattr(source, 'moment') and moment_conversion:
         if source.moment:
             newmag = float(pmt.moment_to_magnitude(source['moment']))
             if abs(source.magnitude - newmag) > 0.5:
@@ -143,7 +143,8 @@ def get_event_data(file):
 
             else:
                 # print(source.magnitude, pmt.moment_to_magnitude(source['moment']))
-                source.magnitude = newmag 
+                source.magnitude = newmag
+                print('Converted magnitude from moment')
 
     return source
 

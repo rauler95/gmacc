@@ -1285,7 +1285,10 @@ def get_pyrocko_container(source, coords, pyrockoChas, imts=['pga'], freqs=[], f
                         savepath=None, timecut=False, only_waveform=False):
     
     print('GF-Path:', gfpath, '\n')
-    stf = get_stf_with_duration(source, rupture_duration_mode=rupture_duration_mode)
+    if hasattr(source, 'stf'):
+        stf = source.stf
+    else:
+        stf = get_stf_with_duration(source, rupture_duration_mode=rupture_duration_mode)
 
     t1 = time.time()
     synthTraces, targets = create_synthetic_waveform(

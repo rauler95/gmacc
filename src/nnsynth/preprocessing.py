@@ -64,7 +64,7 @@ def calc_azistrike(data, strikecol='strike', azimuthcol='azimuth', azistrikecol=
     data.loc[data[azistrikecol] < 0, azistrikecol] = data[azistrikecol][data[azistrikecol] < 0] + 360
 
     if delete:
-        data = data.drop(columns=['strike', 'azimuth'])
+        data = data.drop(columns=[strikecol, azimuthcol])
 
     return data
 

@@ -19,6 +19,34 @@ to modify the parameters have a look at the config file:
 here change the parameter `gf` to the path were your Green's Function store is, for more details look in `gmacc/src/config.py`. Most important is the sourcemode: MT or RS (RS will take much more time to calculate), srccnt the number of different sources and mappoints how many points per source should be considered for the waveform calculation.
 In the declared directory a new one is produced (named after the sourcemode) which consists of one file, per default, `database.csv` is generated, containing all information, and one directory storing all calculated waveforms.
 
+HEADER: Description
+evID: string
+magnitude: Mw
+ev_lat: degree
+ev_lon: degree
+ev_depth: km
+strike: degree
+dip: degree
+rake: degree
+src_duration: s
+width: km
+length: km
+nucleation_x/y: 0-1 position fraction of width/length (see pyrocko documentation)
+ns: network.station
+st_lat: degree
+st_lon: degree
+azimuth: degree (to north)
+rhypo, rjb, ry0, rx, rrup: km
+rup_azimuth, center_azimuth: degree
+
+Available GMs (not all make sense for synthetic waveforms):
+pga: log10 %g
+pgv: log10 cm/s
+pgd: log10 cm
+ai: arias intensity, log 10 m/s
+vi: integrated veloctiy, log10 m
+sigdur: significant duration, s
+SA: spectral acceleration in log 10
 
 ## Neural Network learning
 

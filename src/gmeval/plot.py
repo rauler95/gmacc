@@ -537,7 +537,7 @@ def plot_gm_map_alternative(source, predDict, obsDict=[], resDict=[], mapextent=
                                 # s=markersize,
                                 s=size[idxs1],
                                 c=residuum[idxs1],
-                                marker='x',
+                                marker='+',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -545,7 +545,7 @@ def plot_gm_map_alternative(source, predDict, obsDict=[], resDict=[], mapextent=
                                 # s=markersize,
                                 s=size[idxs2],
                                 c=residuum[idxs2],
-                                marker='+',
+                                marker='-',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -1102,7 +1102,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                 pass
 
             elif minmax:
-                damp = 0.2
+                damp = 0.1
                 shmLevels = num.arange(num.floor(valMin * 10.) / 10.,
                                        (num.ceil(valMax * 10.) / 10.) + damp,
                                        damp)
@@ -1507,7 +1507,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                                 # s=markersize,
                                 s=size[idxs1],
                                 c=residuum[idxs1],
-                                marker='o',
+                                marker='+',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -1515,7 +1515,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
                                 # s=markersize,
                                 s=size[idxs2],
                                 c=residuum[idxs2],
-                                marker='x',
+                                marker='$-$',
                                 cmap=cmapdiffname, zorder=20.,
                                 vmin=min(reslevel), vmax=max(reslevel))
 
@@ -1591,7 +1591,7 @@ def plot_gm_map(predCont, obsCont=[], resCont=[], mapextent=[1, 1],
             if plotindi:
                 plt.suptitle(titlestr, fontsize=fontsize)
                 plt.tight_layout()
-                plt.legend()
+                # plt.legend()
                 if savename != [] and savename != '':
                     fig.savefig('%s_%s_%s.png' % (savename, gm, comp))
 

@@ -1,0 +1,7 @@
+To show the probabilistic Ground Motion Map in your browser you need the Bokeh software.
+To run it execute the following line:
+
+bokeh serve --show path_to_bokeh_script.py --args -d path_to_source_ensemble.geojson
+
+Example:
+bokeh serve --show interactive_gm_plot.py --args -d /home/lehmann/dr/source_ensemble/Samos2020/MTSource/misc/predicted_data_Pyrocko.geojson
